@@ -335,15 +335,18 @@ function SectionTitle({ children }) {
 
 // ─── RESET BUTTON ───────────────────────────────────────────────────
 
-function ResetButton({ onClick }) {
+function ResetButton({ onClick, disabled }) {
   return (
-    <button onClick={onClick} style={{
-      ...glassPanel, padding: "8px 18px", cursor: "pointer", fontFamily: F.body,
-      fontSize: 18, color: C.textMuted, background: "transparent", transition: "all 0.2s ease",
+    <button onClick={disabled ? undefined : onClick} style={{
+      ...glassPanel, padding: "8px 18px", cursor: disabled ? "default" : "pointer", fontFamily: F.body,
+      fontSize: 18, color: disabled ? "rgba(255,255,255,0.15)" : C.textMuted,
+      background: "transparent", transition: "all 0.2s ease",
       display: "inline-flex", alignItems: "center", gap: 8,
+      borderColor: disabled ? "rgba(255,255,255,0.04)" : C.glassBorder,
+      pointerEvents: disabled ? "none" : "auto",
     }}
-    onMouseEnter={e => { e.target.style.color = C.heading; e.target.style.background = C.glass; }}
-    onMouseLeave={e => { e.target.style.color = C.textMuted; e.target.style.background = "transparent"; }}
+    onMouseEnter={e => { if (!disabled) { e.target.style.color = C.heading; e.target.style.background = C.glass; }}}
+    onMouseLeave={e => { e.target.style.color = disabled ? "rgba(255,255,255,0.15)" : C.textMuted; e.target.style.background = "transparent"; }}
     >↺ Reset</button>
   );
 }
@@ -370,7 +373,7 @@ function SupplyDemandGraph() {
             {m === "free" ? "Free Market" : m === "ceiling" ? "Price Ceiling ($30)" : "Price Floor ($70)"}
           </button>
         ))}
-        {mode !== "free" && <ResetButton onClick={() => setMode("free")} />}
+        <ResetButton disabled={mode === "free"} onClick={() => setMode("free")} />
       </div>
       <ResponsiveContainer width="100%" height={320}>
         <ComposedChart data={data} margin={{ top: 10, right: 20, bottom: 20, left: 20 }}>
@@ -451,7 +454,7 @@ function TaxWedgeGraph() {
       {sliderRow("Tax amount", taxRate, setTaxRate, 0, 60, 1, C.yellow, `$${taxRate}`)}
       {sliderRow("Demand slope", demandSlope, setDemandSlope, 0.2, 3.0, 0.1, C.demand, demandSlope >= 2 ? "inelastic" : demandSlope <= 0.5 ? "elastic" : "moderate")}
       {sliderRow("Supply slope", supplySlope, setSupplySlope, 0.2, 3.0, 0.1, C.supply, supplySlope >= 2 ? "inelastic" : supplySlope <= 0.5 ? "elastic" : "moderate")}
-      {(taxRate !== 20 || demandSlope !== 1.0 || supplySlope !== 0.8) && <ResetButton onClick={() => { setTaxRate(20); setDemandSlope(1.0); setSupplySlope(0.8); }} />}
+      <ResetButton disabled={taxRate === 20 && demandSlope === 1.0 && supplySlope === 0.8} onClick={() => { setTaxRate(20); setDemandSlope(1.0); setSupplySlope(0.8); }} />
       <div style={{ display: "flex", gap: 16, marginBottom: 8, fontSize: 18, color: C.textMuted, flexWrap: "wrap" }}>
         <span><span style={{ display: "inline-block", width: 16, height: 3, background: C.demand, marginRight: 6, verticalAlign: "middle" }} />Demand</span>
         <span><span style={{ display: "inline-block", width: 16, height: 3, background: C.supply, marginRight: 6, verticalAlign: "middle" }} />Supply</span>
@@ -527,7 +530,7 @@ function CostCurvesGraph() {
             ...glassPanel, background: show[k] ? `${c}18` : C.glass, borderColor: show[k] ? c + "44" : C.glassBorder, color: show[k] ? c : C.textMuted,
           }}>{l}</button>
         ))}
-        {(!show.mc || !show.atc || !show.avc || !show.afc) && <ResetButton onClick={() => setShow({ mc: true, atc: true, avc: true, afc: true })} />}
+        <ResetButton disabled={show.mc && show.atc && show.avc && show.afc} onClick={() => setShow({ mc: true, atc: true, avc: true, afc: true })} />
       </div>
       <ResponsiveContainer width="100%" height={320}>
         <LineChart data={data} margin={{ top: 10, right: 20, bottom: 20, left: 20 }}>
@@ -565,7 +568,7 @@ function MonopolyGraph() {
             color: showCompare === v ? C.accent : C.textMuted, fontWeight: showCompare === v ? 500 : 300,
           }}>{l}</button>
         ))}
-        {showCompare && <ResetButton onClick={() => setShowCompare(false)} />}
+        <ResetButton disabled={!showCompare} onClick={() => setShowCompare(false)} />
       </div>
       <ResponsiveContainer width="100%" height={340}>
         <ComposedChart data={data} margin={{ top: 10, right: 20, bottom: 20, left: 20 }}>
@@ -609,7 +612,7 @@ function EfficiencyGraph() {
             borderColor: highlight === key ? color + "44" : C.glassBorder, color: highlight === key ? color : C.textMuted,
           }}>{label}</button>
         ))}
-        {highlight !== "both" && <ResetButton onClick={() => setHighlight("both")} />}
+        <ResetButton disabled={highlight === "both"} onClick={() => setHighlight("both")} />
       </div>
       <ResponsiveContainer width="100%" height={320}>
         <ComposedChart data={data} margin={{ top: 10, right: 20, bottom: 20, left: 20 }}>
@@ -633,12 +636,16 @@ function EfficiencyGraph() {
 function MarketShocksGraph() {
   const [dShift, setDShift] = useState(0);
   const [sShift, setSShift] = useState(0);
+  const containerRef = useRef(null);
+  const [plotArea, setPlotArea] = useState(null);
   const baseEqQ = 50, baseEqP = 50;
-  const newEqQ = Math.max(2, Math.min(98, (100 + dShift - sShift) / 1.8));
-  const newEqP = 100 - newEqQ + dShift;
+  // Demand: P = (100 + dShift) - Q. Supply: P = (10 + sShift) + 0.8Q
+  // Eq: (100 + dShift) - Q = (10 + sShift) + 0.8Q → Q = (90 + dShift - sShift) / 1.8
+  const newEqQ = Math.max(2, Math.min(98, (90 + dShift - sShift) / 1.8));
+  const newEqP = (100 + dShift) - newEqQ;
   const data = [];
   for (let q = 0; q <= 100; q += 2) {
-    const bD = 100 - q, bS = 0.8 * q, sD = bD + dShift, sS = bS + sShift;
+    const bD = 100 - q, bS = 10 + 0.8 * q, sD = bD + dShift, sS = bS + sShift;
     data.push({ q,
       baseDemand: bD >= 0 && bD <= 130 ? Math.round(bD * 10) / 10 : null,
       baseSupply: bS >= 0 && bS <= 130 ? Math.round(bS * 10) / 10 : null,
@@ -647,6 +654,21 @@ function MarketShocksGraph() {
     });
   }
   const pChg = Math.round(newEqP - baseEqP), qChg = Math.round(newEqQ - baseEqQ);
+
+  const measurePlot = () => {
+    if (!containerRef.current) return;
+    const grid = containerRef.current.querySelector(".recharts-cartesian-grid-bg") || containerRef.current.querySelector(".recharts-cartesian-grid rect");
+    const svg = containerRef.current.querySelector("svg.recharts-surface") || containerRef.current.querySelector("svg");
+    if (!grid || !svg) return;
+    const gr = grid.getBoundingClientRect(), sr = svg.getBoundingClientRect();
+    setPlotArea({ left: gr.left - sr.left, top: gr.top - sr.top, width: gr.width, height: gr.height });
+  };
+  useEffect(() => { const t = setTimeout(measurePlot, 150); return () => clearTimeout(t); }, [dShift, sShift]);
+  useEffect(() => { const h = () => setTimeout(measurePlot, 150); window.addEventListener("resize", h); return () => window.removeEventListener("resize", h); }, []);
+
+  const toX = (q) => plotArea ? plotArea.left + (q / 100) * plotArea.width : 0;
+  const toY = (p) => plotArea ? plotArea.top + (1 - p / 130) * plotArea.height : 0;
+
   const sldr = (label, value, setValue, color, descFn) => (
     <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 8, flexWrap: "wrap" }}>
       <label style={{ fontSize: 20, color: C.textMuted, minWidth: 220 }}>{label}: <span style={{ color, fontWeight: 200 }}>{value > 0 ? "+" : ""}{value}</span> <span style={{ fontSize: 18, opacity: 0.7 }}>({descFn(value)})</span></label>
@@ -657,20 +679,28 @@ function MarketShocksGraph() {
     <div style={{ margin: "28px 0" }}>
       {sldr("Demand shift", dShift, setDShift, C.demand, v => v > 0 ? "increase" : v < 0 ? "decrease" : "no shift")}
       {sldr("Supply shift", sShift, setSShift, C.supply, v => v > 0 ? "decrease (cost↑)" : v < 0 ? "increase (cost↓)" : "no shift")}
-      {(dShift !== 0 || sShift !== 0) && <ResetButton onClick={() => { setDShift(0); setSShift(0); }} />}
-      <ResponsiveContainer width="100%" height={340}>
-        <ComposedChart data={data} margin={{ top: 10, right: 20, bottom: 20, left: 20 }}>
-          <CartesianGrid strokeDasharray="3 3" stroke={C.gridLine} />
-          <XAxis dataKey="q" label={{ value: "Quantity", position: "bottom", fill: C.textMuted, fontSize: 18 }} tick={{ fill: C.textMuted, fontSize: 18 }} stroke={C.gridLine} />
-          <YAxis domain={[0, 130]} label={{ value: "Price ($)", angle: -90, position: "insideLeft", fill: C.textMuted, fontSize: 18 }} tick={{ fill: C.textMuted, fontSize: 18 }} stroke={C.gridLine} />
-          <Line type="linear" dataKey="baseDemand" stroke={C.demand} strokeWidth={1.5} dot={false} strokeOpacity={0.25} connectNulls={false} isAnimationActive={false} />
-          <Line type="linear" dataKey="baseSupply" stroke={C.supply} strokeWidth={1.5} dot={false} strokeOpacity={0.25} connectNulls={false} isAnimationActive={false} />
-          <Line type="linear" dataKey="demand" stroke={C.demand} strokeWidth={2.5} dot={false} connectNulls={false} isAnimationActive={false} />
-          <Line type="linear" dataKey="supply" stroke={C.supply} strokeWidth={2.5} dot={false} connectNulls={false} isAnimationActive={false} />
-          <ReferenceDot x={baseEqQ} y={baseEqP} r={5} fill={C.green} stroke={C.green} strokeOpacity={0.3} fillOpacity={0.3} isAnimationActive={false} />
-          {(dShift !== 0 || sShift !== 0) && <ReferenceDot x={Math.round(newEqQ)} y={Math.round(newEqP)} r={6} fill={C.green} stroke={C.green} isAnimationActive={false} />}
-        </ComposedChart>
-      </ResponsiveContainer>
+      <ResetButton disabled={dShift === 0 && sShift === 0} onClick={() => { setDShift(0); setSShift(0); }} />
+      <div ref={containerRef} style={{ position: "relative" }}>
+        {plotArea && (
+          <svg style={{ position: "absolute", top: 0, left: 0, width: "100%", height: 340, pointerEvents: "none", zIndex: 5 }}>
+            <circle cx={toX(baseEqQ)} cy={toY(baseEqP)} r={5} fill={C.green} opacity={0.3} />
+            {(dShift !== 0 || sShift !== 0) && (
+              <circle cx={toX(newEqQ)} cy={toY(newEqP)} r={7} fill={C.green} stroke={C.green} strokeWidth={2} />
+            )}
+          </svg>
+        )}
+        <ResponsiveContainer width="100%" height={340}>
+          <ComposedChart data={data} margin={{ top: 10, right: 20, bottom: 20, left: 20 }}>
+            <CartesianGrid strokeDasharray="3 3" stroke={C.gridLine} fill="transparent" />
+            <XAxis dataKey="q" label={{ value: "Quantity", position: "bottom", fill: C.textMuted, fontSize: 18 }} tick={{ fill: C.textMuted, fontSize: 18 }} stroke={C.gridLine} />
+            <YAxis domain={[0, 130]} label={{ value: "Price ($)", angle: -90, position: "insideLeft", fill: C.textMuted, fontSize: 18 }} tick={{ fill: C.textMuted, fontSize: 18 }} stroke={C.gridLine} />
+            <Line type="linear" dataKey="baseDemand" stroke={C.demand} strokeWidth={1.5} dot={false} strokeOpacity={0.25} connectNulls={false} isAnimationActive={false} />
+            <Line type="linear" dataKey="baseSupply" stroke={C.supply} strokeWidth={1.5} dot={false} strokeOpacity={0.25} connectNulls={false} isAnimationActive={false} />
+            <Line type="linear" dataKey="demand" stroke={C.demand} strokeWidth={2.5} dot={false} connectNulls={false} isAnimationActive={false} />
+            <Line type="linear" dataKey="supply" stroke={C.supply} strokeWidth={2.5} dot={false} connectNulls={false} isAnimationActive={false} />
+          </ComposedChart>
+        </ResponsiveContainer>
+      </div>
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginTop: 8 }}>
         {[{ label: "Eq. Price", value: `$${Math.round(newEqP)}`, sub: pChg !== 0 ? `(${pChg > 0 ? "+" : ""}${pChg})` : "", color: pChg > 0 ? C.red : pChg < 0 ? C.green : C.text },
           { label: "Eq. Quantity", value: Math.round(newEqQ), sub: qChg !== 0 ? `(${qChg > 0 ? "+" : ""}${qChg})` : "", color: qChg > 0 ? C.green : qChg < 0 ? C.red : C.text }
@@ -719,7 +749,7 @@ function ElasticityGraph() {
             color: t === k ? C.accent : C.textMuted, fontWeight: t === k ? 500 : 300,
           }}>{v.l}</button>
         ))}
-        {t !== "normal" && <ResetButton onClick={() => setT("normal")} />}
+        <ResetButton disabled={t === "normal"} onClick={() => setT("normal")} />
       </div>
       <ResponsiveContainer width="100%" height={320}>
         <ComposedChart data={data} margin={{ top: 10, right: 20, bottom: 20, left: 20 }}>
@@ -777,7 +807,7 @@ function PPFGraph() {
             color: pointMode === k ? v.color : C.textMuted, fontWeight: pointMode === k ? 200 : 100,
           }}>{k === "efficient" ? "Efficient" : k === "inefficient" ? "Inefficient" : "Unattainable"}</button>
         ))}
-        {(pointMode !== "efficient" || techGrowth !== 0) && <ResetButton onClick={() => { setPointMode("efficient"); setTechGrowth(0); }} />}
+        <ResetButton disabled={pointMode === "efficient" && techGrowth === 0} onClick={() => { setPointMode("efficient"); setTechGrowth(0); }} />
       </div>
       <ResponsiveContainer width="100%" height={360}>
         <ComposedChart data={data} margin={{ top: 10, right: 20, bottom: 20, left: 20 }}>
@@ -824,7 +854,7 @@ function TotalRevenueGraph() {
       <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 12, flexWrap: "wrap" }}>
         <label style={{ fontSize: 20, color: C.textMuted, minWidth: 220 }}>Demand elasticity: <span style={{ color: C.demand, fontWeight: 200 }}>{elasticity.toFixed(1)}</span> <span style={{ fontSize: 18, opacity: 0.7 }}>({elasticity > 1 ? "elastic" : elasticity < 1 ? "inelastic" : "unit elastic"})</span></label>
         <input type="range" min={0.2} max={3.0} step={0.1} value={elasticity} onChange={e => setElasticity(Number(e.target.value))} style={{ flex: 1, minWidth: 100, accentColor: C.demand }} />
-        {elasticity !== 1.0 && <ResetButton onClick={() => setElasticity(1.0)} />}
+        <ResetButton disabled={elasticity === 1.0} onClick={() => setElasticity(1.0)} />
       </div>
       <ResponsiveContainer width="100%" height={340}>
         <ComposedChart data={data} margin={{ top: 10, right: 20, bottom: 20, left: 20 }}>
@@ -860,6 +890,8 @@ function TotalRevenueGraph() {
 function ExternalityGraph() {
   const [extType, setExtType] = useState("negative");
   const [extSize, setExtSize] = useState(20);
+  const containerRef = useRef(null);
+  const [plotArea, setPlotArea] = useState(null);
 
   const data = [];
   for (let q = 0; q <= 100; q += 2) {
@@ -873,19 +905,29 @@ function ExternalityGraph() {
     });
   }
 
-  // Market eq: 100 - Q = 10 + 0.8Q → Q = 50, P = 50
   const mktQ = 50, mktP = 50;
-  // Social optimum
   let optQ, optP;
   if (extType === "negative") {
-    // 100 - Q = 10 + 0.8Q + extSize → Q = (90 - extSize) / 1.8
     optQ = Math.max(0, (90 - extSize) / 1.8);
     optP = 100 - optQ;
   } else {
-    // 100 - Q + extSize = 10 + 0.8Q → Q = (90 + extSize) / 1.8
     optQ = Math.min(100, (90 + extSize) / 1.8);
     optP = 10 + 0.8 * optQ;
   }
+
+  const measurePlot = () => {
+    if (!containerRef.current) return;
+    const grid = containerRef.current.querySelector(".recharts-cartesian-grid-bg") || containerRef.current.querySelector(".recharts-cartesian-grid rect");
+    const svg = containerRef.current.querySelector("svg.recharts-surface") || containerRef.current.querySelector("svg");
+    if (!grid || !svg) return;
+    const gr = grid.getBoundingClientRect(), sr = svg.getBoundingClientRect();
+    setPlotArea({ left: gr.left - sr.left, top: gr.top - sr.top, width: gr.width, height: gr.height });
+  };
+  useEffect(() => { const t = setTimeout(measurePlot, 150); return () => clearTimeout(t); }, [extType, extSize]);
+  useEffect(() => { const h = () => setTimeout(measurePlot, 150); window.addEventListener("resize", h); return () => window.removeEventListener("resize", h); }, []);
+
+  const toX = (q) => plotArea ? plotArea.left + (q / 100) * plotArea.width : 0;
+  const toY = (p) => plotArea ? plotArea.top + (1 - p / 140) * plotArea.height : 0;
 
   return (
     <div style={{ margin: "28px 0" }}>
@@ -898,26 +940,32 @@ function ExternalityGraph() {
             color: extType === k ? c : C.textMuted, fontWeight: extType === k ? 200 : 100,
           }}>{l}</button>
         ))}
-        {(extType !== "negative" || extSize !== 20) && <ResetButton onClick={() => { setExtType("negative"); setExtSize(20); }} />}
+        <ResetButton disabled={extType === "negative" && extSize === 20} onClick={() => { setExtType("negative"); setExtSize(20); }} />
       </div>
       <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 10, flexWrap: "wrap" }}>
         <label style={{ fontSize: 20, color: C.textMuted, minWidth: 220 }}>Externality size: <span style={{ color: C.accent, fontWeight: 200 }}>${extSize}</span></label>
         <input type="range" min={5} max={40} step={5} value={extSize} onChange={e => setExtSize(Number(e.target.value))} style={{ flex: 1, minWidth: 100, accentColor: C.accent }} />
       </div>
-      <ResponsiveContainer width="100%" height={360}>
-        <ComposedChart data={data} margin={{ top: 10, right: 20, bottom: 20, left: 20 }}>
-          <CartesianGrid strokeDasharray="3 3" stroke={C.gridLine} />
-          <XAxis dataKey="q" label={{ value: "Quantity", position: "bottom", fill: C.textMuted, fontSize: 18 }} tick={{ fill: C.textMuted, fontSize: 18 }} stroke={C.gridLine} />
-          <YAxis domain={[0, 140]} label={{ value: "Price ($)", angle: -90, position: "insideLeft", fill: C.textMuted, fontSize: 18 }} tick={{ fill: C.textMuted, fontSize: 18 }} stroke={C.gridLine} />
-          <Line type="linear" dataKey="demand" stroke={C.demand} strokeWidth={2.5} dot={false} isAnimationActive={false} name="Demand (Private Benefit)" />
-          <Line type="linear" dataKey="supply" stroke={C.supply} strokeWidth={2.5} dot={false} isAnimationActive={false} name="Supply (Private Cost)" />
-          <Line type="linear" dataKey="social" stroke={extType === "negative" ? C.red : C.green} strokeWidth={2} dot={false} isAnimationActive={false} strokeDasharray="8 4" name={extType === "negative" ? "Social Cost" : "Social Benefit"} />
-          <ReferenceDot x={mktQ} y={mktP} r={6} fill={C.yellow} stroke={C.yellow} isAnimationActive={false} />
-          <ReferenceDot x={Math.round(optQ)} y={Math.round(optP)} r={6} fill={C.green} stroke={C.green} isAnimationActive={false} />
-          <ReferenceLine x={mktQ} stroke={C.yellow} strokeDasharray="4 4"><Label value="Market Q" fill={C.yellow} fontSize={18} position="top" /></ReferenceLine>
-          <ReferenceLine x={Math.round(optQ)} stroke={C.green} strokeDasharray="4 4"><Label value="Optimal Q" fill={C.green} fontSize={18} position="top" /></ReferenceLine>
-        </ComposedChart>
-      </ResponsiveContainer>
+      <div ref={containerRef} style={{ position: "relative" }}>
+        {plotArea && (
+          <svg style={{ position: "absolute", top: 0, left: 0, width: "100%", height: 360, pointerEvents: "none", zIndex: 5 }}>
+            <circle cx={toX(mktQ)} cy={toY(mktP)} r={6} fill={C.yellow} />
+            <circle cx={toX(optQ)} cy={toY(optP)} r={6} fill={C.green} stroke={C.green} strokeWidth={2} />
+          </svg>
+        )}
+        <ResponsiveContainer width="100%" height={360}>
+          <ComposedChart data={data} margin={{ top: 10, right: 20, bottom: 20, left: 20 }}>
+            <CartesianGrid strokeDasharray="3 3" stroke={C.gridLine} fill="transparent" />
+            <XAxis dataKey="q" label={{ value: "Quantity", position: "bottom", fill: C.textMuted, fontSize: 18 }} tick={{ fill: C.textMuted, fontSize: 18 }} stroke={C.gridLine} />
+            <YAxis domain={[0, 140]} label={{ value: "Price ($)", angle: -90, position: "insideLeft", fill: C.textMuted, fontSize: 18 }} tick={{ fill: C.textMuted, fontSize: 18 }} stroke={C.gridLine} />
+            <Line type="linear" dataKey="demand" stroke={C.demand} strokeWidth={2.5} dot={false} isAnimationActive={false} name="Demand (Private Benefit)" />
+            <Line type="linear" dataKey="supply" stroke={C.supply} strokeWidth={2.5} dot={false} isAnimationActive={false} name="Supply (Private Cost)" />
+            <Line type="linear" dataKey="social" stroke={extType === "negative" ? C.red : C.green} strokeWidth={2} dot={false} isAnimationActive={false} strokeDasharray="8 4" name={extType === "negative" ? "Social Cost" : "Social Benefit"} />
+            <ReferenceLine x={mktQ} stroke={C.yellow} strokeDasharray="4 4"><Label value="Market Q" fill={C.yellow} fontSize={18} position="top" /></ReferenceLine>
+            <ReferenceLine x={Math.round(optQ)} stroke={C.green} strokeDasharray="4 4"><Label value="Optimal Q" fill={C.green} fontSize={18} position="top" /></ReferenceLine>
+          </ComposedChart>
+        </ResponsiveContainer>
+      </div>
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8, marginTop: 8 }}>
         {[
           { label: "Market Q", value: mktQ, color: C.yellow },
@@ -964,7 +1012,7 @@ function FirmProfitGraph() {
       <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 12, flexWrap: "wrap" }}>
         <label style={{ fontSize: 20, color: C.textMuted, minWidth: 220 }}>Market price: <span style={{ color: C.accent, fontWeight: 200 }}>${marketPrice}</span></label>
         <input type="range" min={5} max={60} step={1} value={marketPrice} onChange={e => setMarketPrice(Number(e.target.value))} style={{ flex: 1, minWidth: 100, accentColor: C.accent }} />
-        {marketPrice !== 30 && <ResetButton onClick={() => setMarketPrice(30)} />}
+        <ResetButton disabled={marketPrice === 30} onClick={() => setMarketPrice(30)} />
       </div>
       <ResponsiveContainer width="100%" height={360}>
         <ComposedChart data={data} margin={{ top: 10, right: 20, bottom: 20, left: 20 }}>
@@ -1070,7 +1118,7 @@ function PrisonersDilemmaWidget() {
             ))}
           </div>
         </div>
-        {(choiceA || choiceB) && <div style={{ alignSelf: "flex-end" }}><ResetButton onClick={() => { setChoiceA(null); setChoiceB(null); }} /></div>}
+        <div style={{ alignSelf: "flex-end" }}><ResetButton disabled={!choiceA && !choiceB} onClick={() => { setChoiceA(null); setChoiceB(null); }} /></div>
       </div>
 
       {/* Payoff matrix */}
