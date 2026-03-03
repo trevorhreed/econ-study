@@ -328,6 +328,21 @@ function SectionTitle({ children }) {
   );
 }
 
+// ─── RESET BUTTON ───────────────────────────────────────────────────
+
+function ResetButton({ onClick }) {
+  return (
+    <button onClick={onClick} style={{
+      ...glassPanel, padding: "8px 18px", cursor: "pointer", fontFamily: F.body,
+      fontSize: 18, color: C.textMuted, background: "transparent", transition: "all 0.2s ease",
+      display: "inline-flex", alignItems: "center", gap: 8,
+    }}
+    onMouseEnter={e => { e.target.style.color = C.heading; e.target.style.background = C.glass; }}
+    onMouseLeave={e => { e.target.style.color = C.textMuted; e.target.style.background = "transparent"; }}
+    >↺ Reset</button>
+  );
+}
+
 // ─── GRAPHS (preserved logic, updated colors) ───────────────────────
 
 function SupplyDemandGraph() {
@@ -339,7 +354,7 @@ function SupplyDemandGraph() {
 
   return (
     <div style={{ margin: "20px 0" }}>
-      <div style={{ display: "flex", gap: 8, marginBottom: 12, flexWrap: "wrap" }}>
+      <div style={{ display: "flex", gap: 8, marginBottom: 12, flexWrap: "wrap", alignItems: "center" }}>
         {["free", "ceiling", "floor"].map(m => (
           <button key={m} onClick={() => setMode(m)} style={{
             padding: "10px 18px", borderRadius: 10, fontSize: 20, fontFamily: F.body, cursor: "pointer", transition: "all 0.2s ease",
@@ -350,6 +365,7 @@ function SupplyDemandGraph() {
             {m === "free" ? "Free Market" : m === "ceiling" ? "Price Ceiling ($30)" : "Price Floor ($70)"}
           </button>
         ))}
+        {mode !== "free" && <ResetButton onClick={() => setMode("free")} />}
       </div>
       <ResponsiveContainer width="100%" height={320}>
         <ComposedChart data={data} margin={{ top: 10, right: 20, bottom: 20, left: 20 }}>
@@ -430,6 +446,7 @@ function TaxWedgeGraph() {
       {sliderRow("Tax amount", taxRate, setTaxRate, 0, 60, 1, C.yellow, `$${taxRate}`)}
       {sliderRow("Demand slope", demandSlope, setDemandSlope, 0.2, 3.0, 0.1, C.demand, demandSlope >= 2 ? "inelastic" : demandSlope <= 0.5 ? "elastic" : "moderate")}
       {sliderRow("Supply slope", supplySlope, setSupplySlope, 0.2, 3.0, 0.1, C.supply, supplySlope >= 2 ? "inelastic" : supplySlope <= 0.5 ? "elastic" : "moderate")}
+      {(taxRate !== 20 || demandSlope !== 1.0 || supplySlope !== 0.8) && <ResetButton onClick={() => { setTaxRate(20); setDemandSlope(1.0); setSupplySlope(0.8); }} />}
       <div style={{ display: "flex", gap: 16, marginBottom: 8, fontSize: 18, color: C.textMuted, flexWrap: "wrap" }}>
         <span><span style={{ display: "inline-block", width: 16, height: 3, background: C.demand, marginRight: 6, verticalAlign: "middle" }} />Demand</span>
         <span><span style={{ display: "inline-block", width: 16, height: 3, background: C.supply, marginRight: 6, verticalAlign: "middle" }} />Supply</span>
@@ -498,13 +515,14 @@ function CostCurvesGraph() {
   const [show, setShow] = useState({ mc: true, atc: true, avc: true, afc: true });
   return (
     <div style={{ margin: "20px 0" }}>
-      <div style={{ display: "flex", gap: 8, marginBottom: 12, flexWrap: "wrap" }}>
+      <div style={{ display: "flex", gap: 8, marginBottom: 12, flexWrap: "wrap", alignItems: "center" }}>
         {[{ k: "mc", l: "MC", c: C.mc }, { k: "atc", l: "ATC", c: C.atc }, { k: "avc", l: "AVC", c: C.purple }, { k: "afc", l: "AFC", c: C.textMuted }].map(({ k, l, c }) => (
           <button key={k} onClick={() => setShow(p => ({ ...p, [k]: !p[k] }))} style={{
             padding: "10px 16px", borderRadius: 10, fontFamily: F.mono, fontSize: 18, fontWeight: 600, cursor: "pointer", transition: "all 0.2s ease",
             ...glassPanel, background: show[k] ? `${c}18` : C.glass, borderColor: show[k] ? c + "44" : C.glassBorder, color: show[k] ? c : C.textMuted,
           }}>{l}</button>
         ))}
+        {(!show.mc || !show.atc || !show.avc || !show.afc) && <ResetButton onClick={() => setShow({ mc: true, atc: true, avc: true, afc: true })} />}
       </div>
       <ResponsiveContainer width="100%" height={320}>
         <LineChart data={data} margin={{ top: 10, right: 20, bottom: 20, left: 20 }}>
@@ -533,7 +551,7 @@ function MonopolyGraph() {
 
   return (
     <div style={{ margin: "20px 0" }}>
-      <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
+      <div style={{ display: "flex", gap: 8, marginBottom: 12, alignItems: "center" }}>
         {[{ v: false, l: "Monopoly Only" }, { v: true, l: "Compare to Competition" }].map(({ v, l }) => (
           <button key={l} onClick={() => setShowCompare(v)} style={{
             padding: "10px 18px", borderRadius: 10, fontSize: 20, fontFamily: F.body, cursor: "pointer", transition: "all 0.2s ease",
@@ -542,6 +560,7 @@ function MonopolyGraph() {
             color: showCompare === v ? C.accent : C.textMuted, fontWeight: showCompare === v ? 700 : 400,
           }}>{l}</button>
         ))}
+        {showCompare && <ResetButton onClick={() => setShowCompare(false)} />}
       </div>
       <ResponsiveContainer width="100%" height={340}>
         <ComposedChart data={data} margin={{ top: 10, right: 20, bottom: 20, left: 20 }}>
@@ -577,7 +596,7 @@ function EfficiencyGraph() {
   const eqQ = 50, eqP = 50;
   return (
     <div style={{ margin: "20px 0" }}>
-      <div style={{ display: "flex", gap: 8, marginBottom: 12, flexWrap: "wrap" }}>
+      <div style={{ display: "flex", gap: 8, marginBottom: 12, flexWrap: "wrap", alignItems: "center" }}>
         {[{ key: "cs", label: "Consumer Surplus", color: C.demand }, { key: "ps", label: "Producer Surplus", color: C.supply }, { key: "both", label: "Total Surplus", color: C.green }].map(({ key, label, color }) => (
           <button key={key} onClick={() => setHighlight(key)} style={{
             padding: "10px 18px", borderRadius: 10, fontSize: 20, fontFamily: F.body, cursor: "pointer", transition: "all 0.2s ease",
@@ -585,6 +604,7 @@ function EfficiencyGraph() {
             borderColor: highlight === key ? color + "44" : C.glassBorder, color: highlight === key ? color : C.textMuted,
           }}>{label}</button>
         ))}
+        {highlight !== "both" && <ResetButton onClick={() => setHighlight("both")} />}
       </div>
       <ResponsiveContainer width="100%" height={320}>
         <ComposedChart data={data} margin={{ top: 10, right: 20, bottom: 20, left: 20 }}>
@@ -632,6 +652,7 @@ function MarketShocksGraph() {
     <div style={{ margin: "20px 0" }}>
       {sldr("Demand shift", dShift, setDShift, C.demand, v => v > 0 ? "increase" : v < 0 ? "decrease" : "no shift")}
       {sldr("Supply shift", sShift, setSShift, C.supply, v => v > 0 ? "decrease (cost↑)" : v < 0 ? "increase (cost↓)" : "no shift")}
+      {(dShift !== 0 || sShift !== 0) && <ResetButton onClick={() => { setDShift(0); setSShift(0); }} />}
       <ResponsiveContainer width="100%" height={340}>
         <ComposedChart data={data} margin={{ top: 10, right: 20, bottom: 20, left: 20 }}>
           <CartesianGrid strokeDasharray="3 3" stroke={C.gridLine} />
@@ -685,7 +706,7 @@ function ElasticityGraph() {
   }
   return (
     <div style={{ margin: "20px 0" }}>
-      <div style={{ display: "flex", gap: 8, marginBottom: 12, flexWrap: "wrap" }}>
+      <div style={{ display: "flex", gap: 8, marginBottom: 12, flexWrap: "wrap", alignItems: "center" }}>
         {Object.entries(cfgs).map(([k, v]) => (
           <button key={k} onClick={() => setT(k)} style={{
             padding: "10px 16px", borderRadius: 10, fontSize: 18, fontFamily: F.body, cursor: "pointer", transition: "all 0.2s ease",
@@ -693,6 +714,7 @@ function ElasticityGraph() {
             color: t === k ? C.accent : C.textMuted, fontWeight: t === k ? 600 : 400,
           }}>{v.l}</button>
         ))}
+        {t !== "normal" && <ResetButton onClick={() => setT("normal")} />}
       </div>
       <ResponsiveContainer width="100%" height={320}>
         <ComposedChart data={data} margin={{ top: 10, right: 20, bottom: 20, left: 20 }}>
@@ -746,24 +768,62 @@ function ChapterFoundations() {
 
 function ChapterShocks() {
   return (<div>
-    <SectionTitle>Supply & Demand Curves</SectionTitle>
-    <p><strong>Demand</strong> slopes down: higher price → lower quantity demanded (substitution + income effects). <strong>Supply</strong> slopes up: higher price → more produced (covers rising <T t="marginal cost">MC</T>).</p>
-    <p>The <T t="equilibrium" /> is where they cross. If price is above → <T t="surplus" /> → price falls. If below → <T t="shortage" /> → price rises. Markets self-correct.</p>
+    <SectionTitle>The Demand Curve</SectionTitle>
+    <p>The demand curve shows the quantity buyers want at each price, holding all else constant. It slopes downward because of two reinforcing effects: as price rises, buyers switch to alternatives (<T t="substitution effect" />) and feel poorer (<T t="income effect" />).</p>
+    <p>Each point on the demand curve represents a buyer's <T t="consumer surplus">willingness to pay</T> for that unit. The curve is also a marginal benefit curve — it tells you how much the next unit is worth to the market.</p>
+
+    <SectionTitle>The Supply Curve</SectionTitle>
+    <p>The supply curve shows the quantity sellers offer at each price, holding all else constant. It slopes upward because producing more costs more — <T t="marginal cost">MC</T> rises due to <T t="diminishing marginal returns" /> (Ch. 13). Higher prices are needed to justify the extra cost.</p>
+    <p>Each point on the supply curve represents a seller's cost for that unit. The curve is also a marginal cost curve — it tells you how much the next unit costs the market to produce.</p>
+
+    <SectionTitle>Equilibrium</SectionTitle>
+    <p>The <T t="equilibrium" /> is where supply meets demand. At this price, quantity demanded equals quantity supplied — the market clears. No <T t="shortage" />, no <T t="surplus" />.</p>
+    <p>If price is above equilibrium, sellers can't sell everything (surplus), so they undercut each other, pushing price down. If price is below, buyers can't get everything they want (shortage), so they bid against each other, pushing price up. The market self-corrects.</p>
+    <Intuition>Equilibrium is the market's resting state. Any deviation triggers forces that push it back. This self-correction is what Adam Smith called the "invisible hand" (Ch. 1, Principle #6).</Intuition>
 
     <SectionTitle>Shifts vs. Movements</SectionTitle>
-    <p>A <strong>movement along</strong> the curve = the good's own price changed. A <strong>shift</strong> of the curve = something else changed. This is the most important distinction in supply-demand analysis.</p>
-    <DeepDive title="Complete List of Shifters">
-      <p><strong>Demand shifters:</strong> Income (normal vs. inferior goods), prices of related goods (substitutes & complements), tastes/preferences, expectations, number of buyers.</p>
-      <p><strong>Supply shifters:</strong> Input prices, technology, expectations, number of sellers, government policy (regulation/subsidies), natural events.</p>
+    <p>A movement along the curve happens when the good's own price changes — you slide to a different point on the same curve. A shift of the entire curve happens when something other than the good's own price changes.</p>
+    <p>This distinction is the single most important concept in supply-demand analysis. Getting it wrong cascades into wrong conclusions about everything that follows.</p>
+
+    <DeepDive title="Demand Shifters — Complete List">
+      <p><strong>Income:</strong> For <em>normal goods</em>, higher income shifts demand right (people buy more). For <em>inferior goods</em>, higher income shifts demand left (people upgrade to better alternatives). Example: instant ramen is inferior — when income rises, people switch to fresh meals.</p>
+      <p><strong>Prices of related goods:</strong> If a <em>substitute's</em> price rises, demand for your good rises (Coke gets expensive → buy Pepsi). If a <em>complement's</em> price rises, demand for your good falls (printers get expensive → fewer ink cartridges needed).</p>
+      <p><strong>Tastes and preferences:</strong> A trend, advertisement, or health study can shift demand. A viral TikTok video shifts demand right; a food safety scandal shifts it left.</p>
+      <p><strong>Expectations:</strong> If buyers expect the price to rise tomorrow, demand rises today (buy now before the increase). If they expect a recession, demand falls today.</p>
+      <p><strong>Number of buyers:</strong> Population growth, immigration, or market expansion shifts demand right. A shrinking customer base shifts it left.</p>
+    </DeepDive>
+
+    <DeepDive title="Supply Shifters — Complete List">
+      <p><strong>Input prices:</strong> Higher wages, raw material costs, or energy prices shift supply left (up). Lower input costs shift supply right (down).</p>
+      <p><strong>Technology:</strong> Better tech reduces production costs → supply shifts right. This is the main driver of long-run economic growth.</p>
+      <p><strong>Expectations:</strong> If sellers expect higher future prices, they may withhold supply today → left shift. If they expect falling prices, they sell now → right shift.</p>
+      <p><strong>Number of sellers:</strong> Firms entering the market → supply right. Firms exiting → supply left. (This is the mechanism behind Ch. 14's long-run competitive equilibrium.)</p>
+      <p><strong>Government policy:</strong> Regulations increase costs → left. Subsidies decrease costs → right. Environmental laws, safety requirements, licensing rules all shift supply.</p>
+      <p><strong>Natural events:</strong> Drought, hurricanes, pandemics → supply shifts left for affected goods.</p>
     </DeepDive>
 
     <SectionTitle>Predicting Outcomes</SectionTitle>
+    <p>When only one curve shifts, the result is unambiguous:</p>
     <Formula>Demand ↑ → P↑, Q↑ &nbsp;|&nbsp; Demand ↓ → P↓, Q↓</Formula>
     <Formula>Supply ↑ → P↓, Q↑ &nbsp;|&nbsp; Supply ↓ → P↑, Q↓</Formula>
-    <p>When <strong>both shift simultaneously</strong>: one variable is predictable, the other is ambiguous (depends on which shift is larger).</p>
-    <Intuition>Single shift = both P and Q predictable. Double shift = one predictable, one ambiguous. Extremely common exam question.</Intuition>
+    <p>When both curves shift simultaneously, one variable is predictable and the other is ambiguous — its direction depends on which shift is larger. For example, if demand increases and supply decreases, price definitely rises (both push it up), but quantity could go either way.</p>
+
+    <DeepDive title="The Four Double-Shift Scenarios">
+      <p><strong>D↑ and S↑:</strong> Q definitely ↑ (both push it up). P is ambiguous (D pushes up, S pushes down).</p>
+      <p><strong>D↓ and S↓:</strong> Q definitely ↓. P is ambiguous.</p>
+      <p><strong>D↑ and S↓:</strong> P definitely ↑ (both push it up). Q is ambiguous.</p>
+      <p><strong>D↓ and S↑:</strong> P definitely ↓. Q is ambiguous.</p>
+      <p>The pattern: the variable where both forces agree is predictable. The variable where forces conflict is ambiguous. This is a very common exam question.</p>
+    </DeepDive>
+
+    <SectionTitle>Applying the Model: Real-World Examples</SectionTitle>
+    <p>Oil prices spike after a Middle East conflict → supply shock (supply shifts left) → P↑, Q↓. This explains gas price surges.</p>
+    <p>A new technology makes solar panels cheap → supply shifts right → P↓, Q↑. This explains why solar adoption accelerated.</p>
+    <p>COVID-19 hit both curves: demand shifted left for travel and restaurants (people stayed home), and supply shifted left too (workers got sick, supply chains broke). The net effect on price and quantity depended on which shift dominated in each specific market.</p>
+    <Intuition>Every newspaper headline about rising or falling prices can be analyzed with this framework. Identify which curve shifted, which direction, and you can explain the outcome. This is the workhorse model of economics.</Intuition>
 
     <p style={{ fontWeight: 600, color: C.heading, marginTop: 28 }}>Interactive: Market Shocks Simulator</p>
+    <p style={{ color: C.textMuted, fontSize: 20 }}>Try single shifts first, then combine them to see which variable becomes ambiguous.</p>
     <MarketShocksGraph />
   </div>);
 }
@@ -819,13 +879,26 @@ function Chapter6_8() {
 
 function Chapter7() {
   return (<div>
-    <SectionTitle>Measuring Welfare</SectionTitle>
-    <p><T t="consumer surplus" /> = area below demand, above price (what buyers would have paid minus what they did pay). <T t="producer surplus" /> = area above supply, below price (revenue minus cost). <T t="total surplus" /> = CS + PS.</p>
-    <p>At <T t="equilibrium" />, total surplus is maximized. This is <T t="allocative efficiency" /> — no reallocation can make someone better off without making someone worse off (<T t="pareto efficiency" />).</p>
-    <Intuition>The invisible hand (Ch. 1, Principle #6) works because prices guide resources to their highest-valued uses. Equilibrium maximizes total surplus — formalized here.</Intuition>
+    <SectionTitle>Consumer Surplus</SectionTitle>
+    <p><T t="consumer surplus" /> is the difference between what buyers are willing to pay and what they actually pay. On a graph, it's the area below the demand curve and above the market price. It measures the net benefit buyers receive from participating in the market.</p>
+    <p>When price falls, consumer surplus rises (existing buyers get a better deal, and new buyers enter). When price rises, consumer surplus shrinks.</p>
+
+    <SectionTitle>Producer Surplus</SectionTitle>
+    <p><T t="producer surplus" /> is the difference between the market price and sellers' cost. On a graph, it's the area above the supply curve and below the price. It measures the net benefit sellers receive — their revenue minus their costs.</p>
+    <p>When price rises, producer surplus increases. When price falls, it shrinks. This is why sellers lobby for higher prices and buyers lobby for lower ones.</p>
+
+    <SectionTitle>Total Surplus & Efficiency</SectionTitle>
+    <p><T t="total surplus" /> = CS + PS. It measures the total net benefit to society from trade in a market. At <T t="equilibrium" />, total surplus is maximized — this is <T t="allocative efficiency" />.</p>
+    <p>Efficiency means there's no way to make someone better off without making someone else worse off (<T t="pareto efficiency" />). Free markets achieve this because the price mechanism ensures that every unit where buyer value exceeds seller cost gets traded, and no unit where seller cost exceeds buyer value does.</p>
+    <Intuition>The invisible hand (Ch. 1, Principle #6) works because prices guide resources to their highest-valued uses. Equilibrium maximizes total surplus — this chapter formalizes that claim.</Intuition>
 
     <DeepDive title="Why Interventions Reduce Surplus">
-      <p>Any intervention that moves quantity away from equilibrium creates <T t="deadweight loss" /> — trades that would benefit both buyer and seller but don't happen. This is true for taxes (Ch. 6/8), price controls (Ch. 6), monopoly restriction (Ch. 15), and tariffs (Ch. 9). The surplus framework is the universal tool for evaluating all of these.</p>
+      <p>Any intervention that moves quantity away from equilibrium creates <T t="deadweight loss" /> — mutually beneficial trades that don't happen. Taxes (Ch. 6/8) reduce Q and create DWL triangles. Price ceilings (Ch. 6) cause shortages where willing-to-pay buyers can't find willing-to-sell sellers. Monopoly (Ch. 15) restricts output below the competitive level. Tariffs (Ch. 9) do the same at borders.</p>
+      <p>The CS/PS framework is the universal evaluation tool for all these policies. Whenever you need to judge a policy's impact, draw the surplus areas before and after.</p>
+    </DeepDive>
+
+    <DeepDive title="Limitations of the Surplus Framework">
+      <p>Total surplus doesn't account for <T t="externality">externalities</T> (Ch. 10), <T t="public good">public goods</T> (Ch. 11), or distributional concerns (Ch. 20). A policy that increases total surplus but concentrates gains on the rich might not be desirable. Efficiency is a goal, but it's not the only goal — equity matters too (Ch. 1, Principle #1: trade-offs).</p>
     </DeepDive>
 
     <p style={{ fontWeight: 600, color: C.heading, marginTop: 28 }}>Interactive: Consumer & Producer Surplus</p>
@@ -835,68 +908,95 @@ function Chapter7() {
 
 function Chapter9() {
   return (<div>
-    <SectionTitle>Trade & World Price</SectionTitle>
-    <p>If domestic price &lt; <T t="world price" /> → country has <T t="comparative advantage" /> (Ch. 3) → exports. If domestic price &gt; world price → imports. Trade increases <T t="total surplus" /> (Ch. 7) but creates winners and losers domestically.</p>
-    <p><strong>Exports:</strong> Domestic price rises, producers gain, consumers lose — net gain. <strong>Imports:</strong> Domestic price falls, consumers gain, producers lose — net gain.</p>
-    <Intuition>Trade expands the pie but redistributes slices. That's why it's net beneficial but politically controversial.</Intuition>
+    <SectionTitle>The Determinants of Trade</SectionTitle>
+    <p>A country's trade position depends on comparing its domestic price (without trade) to the <T t="world price" />. If the domestic price is lower, the country can produce the good cheaply relative to the world — it has a <T t="comparative advantage" /> (Ch. 3) and becomes an exporter. If the domestic price is higher, it imports.</p>
+    <p>This is the same comparative advantage logic from Ch. 3, now applied at the national level. The domestic price reflects the country's opportunity cost of production.</p>
 
-    <SectionTitle>Trade Restrictions</SectionTitle>
-    <p>A <T t="tariff" /> is a tax on imports. Same DWL logic as Ch. 6/8: it distorts production and consumption, creating two DWL triangles. An <T t="import quota" /> has similar effects but "revenue" goes to license holders, not government.</p>
-    <DeepDive title="Arguments for Protection">
-      <p><strong>National security</strong> (some validity), <strong><T t="infant industry" /></strong> (hard to identify, "temporary" becomes permanent), <strong>unfair competition</strong> (foreign subsidies — but cheap imports benefit consumers), <strong>bargaining chip</strong> (threaten tariffs to lower others').</p>
-      <p>Economists' near-consensus: free trade increases total welfare. Protection costs are hidden in higher consumer prices.</p>
+    <SectionTitle>Winners and Losers from Trade</SectionTitle>
+    <p>Use the <T t="consumer surplus">CS</T> and <T t="producer surplus">PS</T> framework from Ch. 7 to evaluate welfare:</p>
+    <p>When a country exports, domestic price rises to the world price. Producers gain more PS, consumers lose CS, but the gain exceeds the loss — total surplus rises. When a country imports, domestic price falls. Consumers gain, producers lose, but again total surplus rises.</p>
+    <Intuition>Trade expands the total pie but redistributes the slices. The losers are concentrated (domestic producers hurt by imports) while the gains are diffuse (all consumers pay lower prices). That is why trade generates political opposition even though it is net beneficial.</Intuition>
+
+    <SectionTitle>Tariffs</SectionTitle>
+    <p>A <T t="tariff" /> is a tax on imports. It raises the domestic price above the world price, increasing domestic production, decreasing consumption, and reducing imports. Domestic producers gain, consumers lose, and the government collects revenue.</p>
+    <p>The net effect is <T t="deadweight loss" /> — two triangles, one from inefficient overproduction and one from lost consumption. This is the same Ch. 6/8 tax logic, applied at the border.</p>
+    <p>An <T t="import quota" /> limits import quantity. Effects resemble a tariff, but the price premium goes to whoever holds the import licenses rather than the government.</p>
+
+    <DeepDive title="Arguments For and Against Protection">
+      <p>National security (some validity for defense industries), the <T t="infant industry" /> argument (hard to pick winners, "temporary" becomes permanent), unfair competition (if foreigners sell cheap, our consumers benefit), and the jobs argument (trade reallocates jobs across industries rather than destroying them net).</p>
+      <p>Economists nearly unanimously agree that free trade increases total welfare. The political challenge is compensating the losers — those whose industries shrink from import competition.</p>
     </DeepDive>
   </div>);
 }
 
 function Chapter10() {
   return (<div>
-    <SectionTitle>Externalities</SectionTitle>
-    <p>An <T t="externality" /> affects third parties not in the transaction. <T t="negative externality">Negative</T> (pollution) → market overproduces. <T t="positive externality">Positive</T> (vaccination) → market underproduces.</p>
-    <p>Why? The invisible hand (Ch. 1) works when prices capture all costs/benefits. Externalities break that: <T t="social cost">social cost</T> ≠ private cost.</p>
-    <Intuition>A Pigouvian tax is the rare case where a tax makes society <em>better</em> off — it corrects a distortion rather than creating one. Compare to Ch. 6/8's normal tax DWL.</Intuition>
+    <SectionTitle>What Are Externalities?</SectionTitle>
+    <p>An <T t="externality" /> is a cost or benefit that falls on someone who is not a buyer or seller in the transaction — a third party who never agreed to participate.</p>
+    <p>A <T t="negative externality" /> imposes costs on third parties. A factory pollutes a river, harming downstream residents. The factory's private cost is less than the <T t="social cost" /> (private cost + external cost), so the market overproduces relative to the socially optimal quantity.</p>
+    <p>A <T t="positive externality" /> confers benefits on third parties. Getting vaccinated protects you and everyone around you. The private benefit is less than the <T t="social benefit" /> (private benefit + external benefit), so the market underproduces.</p>
+    <Intuition>Externalities are why Ch. 1 Principle #7 says governments "can sometimes improve market outcomes." The invisible hand works when all costs and benefits are captured in market prices. Externalities break that assumption.</Intuition>
 
-    <DeepDive title="Private Solutions: Coase Theorem">
-      <p>The <T t="coase theorem" />: with clear property rights and low transaction costs, private parties negotiate to the efficient outcome. Limitation: in practice, transaction costs are high and many parties are affected.</p>
+    <SectionTitle>Why Markets Get It Wrong</SectionTitle>
+    <p>Recall from Ch. 7: free markets maximize <T t="total surplus" /> when supply reflects all costs and demand reflects all benefits. Externalities create a gap between private and social cost (or benefit), pushing the market away from the efficient outcome. The distance between market quantity and optimal quantity is pure <T t="deadweight loss" />.</p>
+    <Formula>Negative ext: Social Cost = Private Cost + External Cost → overproduction</Formula>
+    <Formula>Positive ext: Social Benefit = Private Benefit + External Benefit → underproduction</Formula>
+
+    <SectionTitle>Solutions</SectionTitle>
+    <p><T t="pigouvian tax">Pigouvian taxes</T> make the private cost equal to the social cost, "internalizing" the externality. Unlike normal taxes (Ch. 6/8) that create DWL, a Pigouvian tax reduces DWL by correcting a distortion that was already there.</p>
+    <p>Regulation (command-and-control) directly mandates behavior — emission limits, required vaccinations. Simple but inflexible. Tradable permits cap total pollution and let firms trade, combining the certainty of regulation with market flexibility.</p>
+
+    <DeepDive title="Private Solutions: The Coase Theorem">
+      <p>The <T t="coase theorem" />: with clear property rights and low transaction costs, private parties can negotiate to the efficient outcome regardless of who initially holds the rights. A factory polluting a fishery can negotiate compensation either way.</p>
+      <p>The catch: transaction costs are often high (many affected parties, hard to organize), property rights are unclear, and <T t="free rider">free-rider</T> problems arise when externalities affect many people. Coase works in theory but often not in practice, which is why government solutions are needed.</p>
     </DeepDive>
-
-    <SectionTitle>Government Solutions</SectionTitle>
-    <p><strong><T t="pigouvian tax">Pigouvian taxes</T>:</strong> Make private cost = <T t="social cost" />. Unlike normal taxes (Ch. 6/8), these <em>reduce</em> DWL.</p>
-    <p><strong>Regulation:</strong> Command-and-control (emission limits). Simple but inflexible.</p>
-    <p><strong>Tradable permits:</strong> Cap total pollution, let firms trade. Combines certainty of regulation with market flexibility.</p>
   </div>);
 }
 
 function Chapter11() {
   return (<div>
     <SectionTitle>Classifying Goods</SectionTitle>
-    <p>Two dimensions: <T t="excludable" /> (can prevent use?) and <T t="rivalrous" /> (one's use reduces another's?).</p>
-    <Formula>Rival + Excludable = Private Good &nbsp;|&nbsp; Rival + Non-excl. = Common Resource</Formula>
-    <Formula>Non-rival + Excludable = Club Good &nbsp;|&nbsp; Non-rival + Non-excl. = Public Good</Formula>
+    <p>All goods can be classified along two dimensions: <T t="excludable" /> (can you prevent non-payers from using it?) and <T t="rivalrous" /> (does one person's consumption reduce what's available for others?).</p>
+    <Formula>Rival + Excludable = Private Good (ice cream, clothing)</Formula>
+    <Formula>Rival + Non-excludable = Common Resource (fish in the sea)</Formula>
+    <Formula>Non-rival + Excludable = Club Good (cable TV, toll roads)</Formula>
+    <Formula>Non-rival + Non-excludable = Public Good (national defense)</Formula>
+    <p>Private goods work fine in markets because sellers can charge and supply is limited. The problems arise in the other three quadrants.</p>
 
-    <SectionTitle>Public Goods & Free Riders</SectionTitle>
-    <p><T t="public good">Public goods</T> are non-excludable, so people enjoy them without paying (<T t="free rider" /> problem). Private markets undersupply them — same logic as <T t="positive externality">positive externalities</T> (Ch. 10). Solution: government provision via taxes.</p>
+    <SectionTitle>Public Goods</SectionTitle>
+    <p>Because <T t="public good">public goods</T> are non-excludable, people can enjoy them without paying — the <T t="free rider" /> problem. Private markets undersupply public goods because no individual has enough incentive to pay the full cost. This is the same logic as <T t="positive externality">positive externalities</T> (Ch. 10) — the benefit to society exceeds the private benefit to any one buyer.</p>
+    <p>The solution is government provision funded by taxes. The hard question is how much to provide, since people have no incentive to reveal their true <T t="consumer surplus">willingness to pay</T>.</p>
 
-    <SectionTitle>Common Resources & Tragedy</SectionTitle>
-    <p><T t="common resource">Common resources</T> are rivalrous but non-excludable → <T t="tragedy of the commons">overuse</T>. Each user's consumption imposes a <T t="negative externality">negative externality</T> (Ch. 10) on others.</p>
-    <p><strong>Solutions:</strong> Regulation (quotas), privatization (property rights → Coase), tradable permits.</p>
-    <Intuition>Nobody washes a rental car. When something belongs to everyone, it belongs to no one.</Intuition>
+    <SectionTitle>Common Resources</SectionTitle>
+    <p><T t="common resource">Common resources</T> are rivalrous but non-excludable. Since nobody owns them, nobody has the incentive to conserve them. The <T t="tragedy of the commons" />: each user benefits from taking more, but the cost of depletion is shared by everyone. Individual incentives lead to overuse and potential destruction.</p>
+    <p>This is a <T t="negative externality">negative externality</T> problem (Ch. 10) — each user's consumption imposes costs on others. Solutions: regulation (fishing quotas, hunting seasons), privatization (assign property rights so someone has an incentive to manage sustainably), or tradable permits.</p>
+    <Intuition>Nobody washes a rental car. When something belongs to everyone, it belongs to no one — and nobody takes care of it. This applies to ocean fisheries, clean air, congested roads, and groundwater aquifers.</Intuition>
+
+    <DeepDive title="Why This Classification Matters">
+      <p>The 2x2 matrix connects to every market failure in the course. Public goods connect to Ch. 10 (positive externalities) and Ch. 12 (why we need taxes). Common resources connect to Ch. 10 (negative externalities) and Ch. 17 (the prisoner's dilemma — each user defects by overusing). Understanding which quadrant a good falls into immediately tells you what kind of market failure to expect and what solution to consider.</p>
+    </DeepDive>
   </div>);
 }
 
 function Chapter12() {
   return (<div>
     <SectionTitle>Tax Structure</SectionTitle>
-    <p><T t="marginal tax rate" /> = extra tax on the next dollar (drives incentives, Ch. 1 Principle #3). <T t="average tax rate" /> = total tax / total income (measures burden).</p>
-    <p>Systems: <T t="progressive tax">Progressive</T> (rate rises with income), <T t="regressive tax">regressive</T> (falls — like sales tax), <T t="proportional tax">proportional</T> (flat).</p>
+    <p><T t="marginal tax rate" /> = extra tax on the next dollar of income. This is what drives incentives (Ch. 1, Principle #3 — marginal thinking). If your marginal rate is 35%, you keep only 65 cents of the next dollar earned, which affects decisions to work more, save, or invest.</p>
+    <p><T t="average tax rate" /> = total tax / total income. This measures the overall burden. The two rates are different because of deductions, brackets, and phase-outs.</p>
+    <p>Tax systems can be <T t="progressive tax">progressive</T> (rate rises with income, like the U.S. income tax), <T t="regressive tax">regressive</T> (rate falls with income, like sales taxes that take a larger share of poor people's spending), or <T t="proportional tax">proportional</T> (flat rate regardless of income).</p>
 
-    <SectionTitle>Efficiency vs. Equity</SectionTitle>
-    <p>Efficient taxes minimize <T t="deadweight loss" /> (Ch. 6/8). Tax <T t="inelastic" /> goods (Ch. 5) → less distortion. Lump-sum taxes are most efficient but inequitable.</p>
-    <p><T t="benefits principle" />: tax based on benefits received. <T t="ability-to-pay principle" />: tax based on capacity. The latter implies <T t="horizontal equity" /> and <T t="vertical equity" />.</p>
-    <Intuition>This is Ch. 1 Principle #1 (trade-offs) applied to taxation. More progressive = more equitable but higher marginal rates = more distortion.</Intuition>
+    <SectionTitle>Efficiency in Taxation</SectionTitle>
+    <p>An efficient tax system minimizes <T t="deadweight loss" /> (Ch. 6/8) and administrative costs. DWL arises because taxes distort decisions — they change the prices people face and push behavior away from the efficient outcome.</p>
+    <p>From Ch. 5: taxes on goods with <T t="inelastic" /> demand or supply create less DWL because the tax base doesn't shrink much. This is why governments tax cigarettes and gasoline heavily — demand is inelastic.</p>
+    <p>DWL grows with the square of the tax rate — doubling the rate quadruples DWL. This means broad-based taxes at moderate rates are more efficient than narrow taxes at high rates.</p>
+
+    <SectionTitle>Equity in Taxation</SectionTitle>
+    <p><T t="benefits principle" />: taxes proportional to benefits received. Works for gasoline taxes funding roads, but not for redistributive programs.</p>
+    <p><T t="ability-to-pay principle" />: taxes reflect capacity to bear the burden. This implies <T t="horizontal equity" /> (similar situations → similar taxes) and <T t="vertical equity" /> (greater ability → larger taxes).</p>
+    <Intuition>This is Ch. 1 Principle #1 in action: people face trade-offs, and so does tax policy. More progressive taxes mean more equity but higher marginal rates, which mean more distortion and more DWL. There is no free lunch in taxation.</Intuition>
 
     <DeepDive title="The Laffer Curve Revisited">
-      <p>DWL grows with the <em>square</em> of the tax rate. Double the rate → quadruple the DWL. This means there's a revenue-maximizing rate — the <T t="laffer curve" /> from Ch. 6/8. Good tax design means keeping rates moderate and bases broad.</p>
+      <p>The <T t="laffer curve" /> from Ch. 6/8: at rate 0, revenue is 0. At 100%, nobody works, revenue is 0. Maximum revenue is somewhere in between. Because DWL grows with the square of the rate, there's a strong efficiency case for keeping rates moderate. The fundamental challenge of tax design: raise enough revenue for public goods (Ch. 11), correct externalities (Ch. 10), and redistribute income (Ch. 20), all while minimizing the efficiency costs.</p>
     </DeepDive>
   </div>);
 }
@@ -927,17 +1027,25 @@ function Chapter13() {
 function Chapter14() {
   return (<div>
     <SectionTitle>The Competitive Firm</SectionTitle>
-    <p>A <T t="competitive market" /> has many firms, identical products, free entry/exit. Each firm is a <T t="price taker" />: P = <T t="marginal revenue">MR</T> = AR. (Unlike monopoly (Ch. 15) where MR &lt; P.)</p>
-    <p>Profit maximization: produce where P = <T t="mc">MC</T>. Same MR = MC rule, just simpler because P = MR.</p>
+    <p>A <T t="competitive market" /> has many firms, identical products, and free entry/exit. The key result: each firm is a <T t="price taker" /> — it takes the market price as given. If it raises price even slightly, buyers go elsewhere. If it lowers price, it sacrifices revenue for nothing.</p>
+    <p>For a competitive firm, Price = <T t="marginal revenue">MR</T> = Average Revenue. This is the crucial difference from a <T t="monopoly" /> (Ch. 15), where MR is less than P because the monopolist must cut price on all units to sell one more.</p>
+
+    <SectionTitle>Profit Maximization</SectionTitle>
+    <p>Produce where P = <T t="mc">MC</T>. Since P = MR for competitive firms, this is just the general MR = MC rule. The firm increases output as long as P exceeds MC (each unit adds to profit) and stops where they're equal.</p>
     <Formula>Profit = (P − ATC) × Q</Formula>
-    <p><T t="shutdown condition" />: Short-run, shut down if P &lt; <T t="avc">AVC</T>. Long-run, exit if P &lt; <T t="atc">ATC</T>. The firm's supply curve is its MC curve above AVC.</p>
-    <Intuition>Keep the restaurant open if revenue covers food and staff (variable costs), even if it doesn't cover rent (fixed). In the long run, the lease expires and you leave if you can't cover everything.</Intuition>
+    <p>If P exceeds <T t="atc">ATC</T>, the firm earns positive economic profit. If P = ATC, <T t="zero economic profit" />. If P is below ATC, the firm takes a loss.</p>
+
+    <SectionTitle>Shutdown & Exit</SectionTitle>
+    <p><T t="shutdown condition" />: In the short run, shut down if P falls below <T t="avc">AVC</T> — producing would lose even more than just paying fixed costs. In the long run, exit if P is below ATC, since eventually all costs become variable.</p>
+    <p>The firm's short-run supply curve is its MC curve above the AVC curve.</p>
+    <Intuition>Keep the restaurant open if revenue covers food and waitstaff (variable costs), even if it doesn't cover rent (fixed costs) — because you owe rent either way. In the long run, the lease expires and you leave if you can't cover everything.</Intuition>
 
     <SectionTitle>Long-Run Equilibrium</SectionTitle>
-    <p>Positive profit → entry → supply shifts right (Ch. 4) → price falls → profit falls. Losses → exit → supply left → price rises. Process continues until <T t="zero economic profit" />: P = minimum <T t="atc">ATC</T>. Every firm at <T t="efficient scale" /> (Ch. 13).</p>
-    <p>Zero economic profit ≠ failure. The firm covers all costs including <T t="opportunity cost">opportunity costs</T> (Ch. 1). It just earns no above-normal return.</p>
+    <p>Positive profit attracts entry → supply shifts right (Ch. 4) → price falls → profit falls. Losses cause exit → supply shifts left → price rises → losses shrink. This continues until <T t="zero economic profit" />: P = minimum <T t="atc">ATC</T>.</p>
+    <p>Zero economic profit is not failure. The firm covers all costs including <T t="opportunity cost">opportunity costs</T> (Ch. 1). It earns a normal return — just not above-normal.</p>
+
     <DeepDive title="Why Competitive Markets Are Efficient">
-      <p>Free entry is the great equalizer. P = MC (allocative efficiency, Ch. 7). P = min ATC (productive efficiency). No <T t="deadweight loss" />. No excess profit. This is why Ch. 1 Principle #6 works — competitive markets channel self-interest into social good.</p>
+      <p>Free entry is the great equalizer. In long-run equilibrium: P = MC (<T t="allocative efficiency" />, Ch. 7 — the right amount is produced), P = min ATC (<T t="productive efficiency" /> — produced at lowest possible cost), and zero economic profit (no resources wasted on above-normal returns). This is why Ch. 1 Principle #6 holds — competitive markets channel self-interest into social good. Every subsequent market structure (Ch. 15-17) is evaluated against this competitive benchmark.</p>
     </DeepDive>
   </div>);
 }
@@ -970,16 +1078,20 @@ function Chapter15() {
 function Chapter16() {
   return (<div>
     <SectionTitle>Monopolistic Competition</SectionTitle>
-    <p><T t="monopolistic competition" />: many firms, <T t="product differentiation">differentiated products</T>, free entry/exit. Each firm has some <T t="market power" /> (downward-sloping demand) but faces competition from substitutes. Examples: restaurants, clothing brands, apps.</p>
+    <p><T t="monopolistic competition" /> has three features: many firms, <T t="product differentiation">differentiated products</T> (branding, quality, style), and free entry/exit. Each firm has some <T t="market power" /> — a downward-sloping demand curve — but faces competition from close substitutes. Examples: restaurants, clothing brands, apps, hairdressers.</p>
 
-    <p><strong>Short run:</strong> Like <T t="monopoly">monopoly</T> (Ch. 15) — MR &lt; P, profit-maximize at MR = MC, can earn positive profit.</p>
-    <p><strong>Long run:</strong> Like <T t="competitive market">competition</T> (Ch. 14) — profit attracts entry → each firm's demand shifts left → profit → zero.</p>
+    <SectionTitle>Short Run vs. Long Run</SectionTitle>
+    <p>In the short run, a monopolistically competitive firm behaves like a <T t="monopoly">monopolist</T> (Ch. 15): MR is less than P, it profit-maximizes at MR = MC, and it can earn positive economic profit.</p>
+    <p>In the long run, it resembles <T t="competitive market">competition</T> (Ch. 14): positive profit attracts new firms with similar products. Entry shifts each existing firm's demand left (fewer customers per firm) and makes it more elastic (more substitutes). This continues until economic profit hits zero: P = ATC at the profit-maximizing quantity.</p>
     <Formula>Long-run: P = ATC (zero profit) but P &gt; MC (markup persists)</Formula>
 
-    <DeepDive title="Two Inefficiencies">
-      <p><strong>1. Markup over MC:</strong> P &gt; MC means <T t="deadweight loss" /> from underproduction, same logic as Ch. 15.</p>
-      <p><strong>2. Excess capacity:</strong> Firms produce below <T t="efficient scale" /> (Ch. 13). "Too many" firms, each underutilized.</p>
-      <p><strong>Counter:</strong> Product variety has value. The inefficiency is partly the cost of choice. Would you trade all the restaurants in town for one efficient cafeteria?</p>
+    <SectionTitle>Efficiency Assessment</SectionTitle>
+    <p>Compared to perfect competition (Ch. 14), monopolistic competition has two inefficiencies. First, markup over MC: since P exceeds MC, there is <T t="deadweight loss" /> from underproduction. Second, excess capacity: firms produce below the <T t="efficient scale" /> (Ch. 13) — there are "too many" firms, each underutilizing capacity.</p>
+    <p>The counterargument: product variety has value. Consumers benefit from having many differentiated options even if each firm isn't maximally efficient. The inefficiency is the cost of choice.</p>
+    <Intuition>There are a lot of restaurants in your town, each half-full. That is excess capacity. But would you prefer one giant efficient cafeteria? The variety is the point.</Intuition>
+
+    <DeepDive title="Advertising & Branding">
+      <p>Firms invest heavily in advertising because <T t="product differentiation">differentiation</T> is the source of their market power. Critics say advertising is wasteful — it manipulates rather than informs, raising ATC without real benefit. Defenders say it provides information, signals quality (only profitable firms can afford big campaigns), and enables competition by making consumers aware of alternatives. Brand names can create artificial differentiation (inefficient) or provide quality guarantees that reduce search costs (efficient). The truth is probably a mix.</p>
     </DeepDive>
   </div>);
 }
@@ -987,16 +1099,23 @@ function Chapter16() {
 function Chapter17() {
   return (<div>
     <SectionTitle>Strategic Interdependence</SectionTitle>
-    <p>An <T t="oligopoly" /> has few sellers, each aware their actions affect rivals. The defining feature is strategic interdependence — unlike competition (too small to matter) or monopoly (no rivals).</p>
-    <p><strong>The tension:</strong> Collectively, firms maximize profit by acting as a <T t="monopoly" /> (restrict output, Ch. 15). Individually, each firm wants to cheat (produce more, steal share). <T t="cartel">Cartels</T> are inherently unstable.</p>
-    <Intuition>Same logic as <T t="tragedy of the commons" /> (Ch. 11): what's best for the group conflicts with what's best for each individual.</Intuition>
+    <p>An <T t="oligopoly" /> has few sellers, each aware their actions affect rivals. This strategic interdependence is the defining feature — fundamentally different from competition (too small to matter) and monopoly (no rivals).</p>
+    <p>The core tension: collectively, firms maximize profit by acting as a <T t="monopoly" /> (restrict output, raise price, Ch. 15 logic). Individually, each firm has an incentive to cheat — produce more than agreed and steal market share. A <T t="cartel" /> is a group attempting joint monopoly behavior, but the private incentive to cheat makes cartels inherently unstable.</p>
+    <Intuition>Same logic as the <T t="tragedy of the commons" /> (Ch. 11): what's best for the group (restrict) conflicts with what's best for each individual (cheat). Self-interest undermines collective interest.</Intuition>
 
-    <SectionTitle>Game Theory</SectionTitle>
-    <p>The <T t="prisoners dilemma" />: defecting is a <T t="dominant strategy" />, but mutual defection is worse than mutual cooperation. The <T t="nash equilibrium" /> (both defect) is collectively suboptimal.</p>
-    <p>In repeated games, cooperation becomes sustainable via tit-for-tat, reputation, and punishment threats.</p>
+    <SectionTitle>The Prisoner's Dilemma</SectionTitle>
+    <p><T t="game theory" /> is the tool for analyzing strategic interdependence. The central model is the <T t="prisoners dilemma" />: two firms choose between cooperating (restricting output) and defecting (overproducing).</p>
+    <p>Defecting is a <T t="dominant strategy" /> — it's better regardless of what the other does. But when both defect, they're both worse off than if both had cooperated. The <T t="nash equilibrium" /> (both defect) is collectively suboptimal.</p>
+    <Formula>Both cooperate → good profits for both</Formula>
+    <Formula>One defects → defector profits greatly, cooperator gets crushed</Formula>
+    <Formula>Both defect → mediocre profits (Nash equilibrium)</Formula>
+    <p>In repeated interactions, cooperation becomes more sustainable through tit-for-tat strategies, reputation effects, and the ability to punish cheaters. Fewer firms, transparent pricing, and repeated play all help sustain cooperation.</p>
 
-    <DeepDive title="The Market Structure Spectrum">
-      <p>From most to least competitive: <strong>Perfect competition</strong> (Ch. 14: P = MC, zero profit) → <strong>Monopolistic competition</strong> (Ch. 16: P &gt; MC, zero profit, variety) → <strong>Oligopoly</strong> (depends on cooperation level) → <strong>Monopoly</strong> (Ch. 15: highest P, most DWL). As you move right, price rises, quantity falls, <T t="consumer surplus" /> shrinks — all Ch. 7 concepts in action.</p>
+    <SectionTitle>Policy & the Market Structure Spectrum</SectionTitle>
+    <p><T t="collusion" /> is illegal. Antitrust laws prohibit explicit price-fixing, though tacit collusion (parallel behavior without agreement) is harder to prosecute.</p>
+
+    <DeepDive title="Where Oligopoly Fits">
+      <p>From most to least competitive: Perfect competition (Ch. 14: P = MC, zero profit) → Monopolistic competition (Ch. 16: P above MC, zero profit, variety) → Oligopoly (depends on cooperation level) → Monopoly (Ch. 15: highest P, most DWL). As you move toward monopoly, price rises, quantity falls, <T t="deadweight loss">DWL</T> grows, and <T t="consumer surplus" /> shrinks. Every Ch. 7 concept in action across a spectrum of market structures.</p>
     </DeepDive>
   </div>);
 }
@@ -1004,57 +1123,89 @@ function Chapter17() {
 function Chapter18() {
   return (<div>
     <SectionTitle>Labor Demand</SectionTitle>
-    <p><T t="derived demand" />: demand for labor comes from demand for the goods it produces (Ch. 4 link). A competitive firm hires where <T t="value of the marginal product">VMP</T> = wage.</p>
-    <Formula>VMP = Marginal Product of Labor × Output Price</Formula>
-    <p>This is the MR = MC rule (Ch. 14/15) applied to inputs: extra revenue from one more worker (VMP) = extra cost (wage).</p>
+    <p><T t="factors of production" /> — labor, land, capital — are bought and sold in factor markets. The analysis mirrors goods markets (Ch. 4) with roles reversed: firms are buyers, households are sellers.</p>
+    <p><T t="derived demand" />: demand for labor derives from demand for the goods it produces. If demand for cars rises (Ch. 4 demand shift), demand for auto workers rises too.</p>
+    <p>A competitive, profit-maximizing firm hires workers until the <T t="value of the marginal product">value of the marginal product (VMP)</T> equals the wage:</p>
+    <Formula>VMP = MPL x P (marginal product of labor x output price)</Formula>
+    <Formula>Hire until: VMP = Wage</Formula>
+    <p>This is the same MR = MC logic from Ch. 14/15, applied to input decisions. The extra revenue from one more worker (VMP) equals the extra cost (wage).</p>
+    <Intuition>A restaurant hires a cook if the revenue that cook generates (meals served x price per meal) exceeds their wage. That is the value of the marginal product.</Intuition>
+
+    <SectionTitle>What Shifts Labor Demand?</SectionTitle>
+    <p>Output price: if the product price rises, each worker's output is worth more, so labor demand shifts right. Technology: it can complement workers (better tools increase <T t="marginal product of labor">MPL</T>) or substitute for them (automation reduces demand). Supply of other factors: more capital available makes workers more productive.</p>
 
     <SectionTitle>Labor Supply</SectionTitle>
-    <p>Reflects the <T t="opportunity cost" /> (Ch. 1) of leisure. Higher wages → <T t="substitution effect" /> (work more) vs. <T t="income effect" /> (buy more leisure). Usually substitution dominates → upward-sloping supply.</p>
+    <p>The labor supply curve reflects the <T t="opportunity cost" /> (Ch. 1) of leisure. When wages rise, there are two opposing effects: the <T t="substitution effect" /> (leisure is more expensive, so work more) and the <T t="income effect" /> (you're richer, so buy more leisure). Usually substitution dominates and labor supply slopes upward.</p>
 
-    <SectionTitle>Capital & Land</SectionTitle>
-    <p>Same VMP logic. In competitive factor markets, each factor earns its VMP — the neoclassical theory of distribution. If factors are paid VMP and output priced at MC → <T t="allocative efficiency" /> (Ch. 7) extends to factor markets.</p>
+    <SectionTitle>Capital, Land & Distribution</SectionTitle>
+    <p>The same VMP logic applies to all factors. In competitive factor markets, each factor earns its VMP — the neoclassical theory of distribution. Your income reflects your productivity. If factors are paid VMP and output is priced at MC, <T t="allocative efficiency" /> (Ch. 7) extends to factor markets too.</p>
+
+    <DeepDive title="Why Factor Markets Matter for Later Chapters">
+      <p>This chapter provides the foundation for Ch. 19 (why wages differ — differences in MPL and VMP), Ch. 20 (income inequality — the distribution of factor payments), and even Ch. 6 (minimum wage as a price floor in the labor market). The VMP = Wage condition is the labor market's version of P = MC.</p>
+    </DeepDive>
   </div>);
 }
 
 function Chapter19() {
   return (<div>
     <SectionTitle>Why Wages Differ</SectionTitle>
-    <p><T t="compensating differential">Compensating differentials</T>: dangerous/unpleasant jobs pay more (<T t="opportunity cost" />, Ch. 1). <T t="human capital" /> (education, skills, experience): higher HC → higher <T t="marginal product of labor">MPL</T> → higher <T t="value of the marginal product">VMP</T> → higher wage (Ch. 18).</p>
-    <p><T t="signaling" />: education may signal pre-existing ability rather than (just) increasing productivity.</p>
-    <p><strong>Above-equilibrium wages:</strong> Minimum wage (<T t="price floor" />, Ch. 6), unions, <T t="efficiency wages" /> (firms voluntarily overpay → productivity gains).</p>
+    <p>In a competitive labor market (Ch. 18), wages equal <T t="value of the marginal product">VMP</T>. So wage differences reflect productivity differences — but what drives those?</p>
+    <p><T t="compensating differential">Compensating differentials</T>: dangerous, stressful, or unpleasant jobs pay more to attract workers. This is <T t="opportunity cost" /> (Ch. 1) applied to labor — the "cost" of a job includes its non-monetary downsides. Coal miners earn more than office workers in part because the job is risky.</p>
+    <p><T t="human capital" /> — education, skills, training, experience — is the largest determinant of wage differences. More HC means higher <T t="marginal product of labor">MPL</T>, higher VMP, higher wage (Ch. 18 chain). Education is an investment: pay costs now (tuition, foregone wages) for higher future earnings.</p>
+
+    <SectionTitle>Signaling & Above-Market Wages</SectionTitle>
+    <p>The <T t="signaling" /> theory offers an alternative view: education may not increase productivity but instead signals pre-existing ability to employers. In reality, both effects likely operate.</p>
+    <p>Some wages persist above the market-clearing level: minimum wage (a <T t="price floor" /> from Ch. 6, creating unemployment), unions (collective bargaining pushes wages up but may reduce employment), and <T t="efficiency wages" /> (firms voluntarily overpay to reduce turnover, incentivize effort, and attract better workers — the higher wage pays for itself through productivity).</p>
 
     <SectionTitle>Discrimination</SectionTitle>
-    <p>Competitive markets (Ch. 14) work against <T t="discrimination" />: discriminating firms have higher costs than non-discriminating competitors. But discrimination persists through customer preferences, statistical discrimination, and <T t="market power" /> (Ch. 15-17 firms can afford it).</p>
+    <p><T t="discrimination" /> means paying different wages (or denying opportunities) to equally productive workers based on personal characteristics. Competitive markets (Ch. 14) work against this: a discriminating firm has higher costs than a non-discriminating competitor and should be driven out.</p>
+    <p>Discrimination persists through customer or employee preferences, statistical discrimination (using group averages as proxies when individual info is costly), and <T t="market power" /> (Ch. 15-17 firms with economic profit can afford the inefficiency of discrimination).</p>
+    <Intuition>Observed wage gaps partly reflect discrimination, but also partly reflect differences in human capital, experience, occupation choice, hours worked, and compensating differentials. Disentangling these is one of the hardest empirical problems in economics.</Intuition>
   </div>);
 }
 
 function Chapter20() {
   return (<div>
     <SectionTitle>Measuring Inequality</SectionTitle>
-    <p>Measured by quintile shares or Gini coefficient. Caveats: <T t="in-kind transfers" /> not counted, life-cycle effects, economic mobility between quintiles over time.</p>
+    <p>Income inequality is measured by quintile shares (the top 20% of U.S. households earn roughly half of total income) or the Gini coefficient (0 = perfect equality, 1 = one person has everything). Inequality has risen over recent decades, driven by rising returns to <T t="human capital">education</T> (Ch. 19), technological change, and superstar effects.</p>
+    <p>Important caveats: <T t="in-kind transfers" /> (food stamps, Medicaid, housing vouchers) aren't counted as income, making poverty look worse than it is. The economic life cycle means a snapshot overstates lifetime inequality (young people earn less, retirees draw down savings). And economic mobility means many people move between quintiles over a lifetime.</p>
 
     <SectionTitle>Philosophy of Redistribution</SectionTitle>
-    <p><T t="utilitarian" />: maximize total utility → redistribution helps (diminishing marginal utility of income). <T t="liberal">Rawlsian</T>: maximize worst-off person's welfare (maximin). <T t="libertarian" />: protect rights, minimal redistribution.</p>
+    <p><T t="utilitarian" /> (Bentham/Mill): maximize total happiness. Because of diminishing marginal utility of income (an extra dollar means more to a poor person), redistribution increases total utility. But too much redistribution reduces incentives to work and produce.</p>
+    <p><T t="liberal">Rawlsian</T> (Rawls): design society from behind a "veil of ignorance" — not knowing your place in it. Result: maximize the welfare of the worst-off person (maximin). More redistribution than utilitarianism.</p>
+    <p><T t="libertarian" /> (Nozick): redistribution violates property rights. Focus on process fairness (equal opportunity), not outcome equality. Minimal redistribution.</p>
+    <Intuition>These aren't just abstract philosophies. The utilitarian asks "does this maximize total welfare?" The Rawlsian asks "does this help the worst-off?" The libertarian asks "does this respect individual rights?" Every policy debate maps to these frameworks.</Intuition>
 
     <SectionTitle>Anti-Poverty Policy</SectionTitle>
-    <p>Minimum wage (Ch. 6 <T t="price floor" />, effectiveness depends on <T t="elasticity">labor demand elasticity</T>, Ch. 5). Cash transfers (risk reducing work incentives via high implicit <T t="marginal tax rate">marginal tax rates</T>, Ch. 12). EITC (preserves work incentives). <T t="in-kind transfers" />. Education investment (<T t="human capital" />, Ch. 19).</p>
-    <Intuition>Every anti-poverty tool involves the efficiency-equity tradeoff from Ch. 1. The question is always: how much DWL is this redistribution worth?</Intuition>
+    <p>Minimum wage: a <T t="price floor" /> (Ch. 6) that helps workers who keep their jobs but may cause unemployment. The debate centers on <T t="elasticity">labor demand elasticity</T> (Ch. 5) — if demand is inelastic, job losses are small.</p>
+    <p>Cash transfers risk reducing work incentives through high implicit <T t="marginal tax rate">marginal tax rates</T> (Ch. 12) as benefits phase out. The Earned Income Tax Credit (EITC) preserves work incentives because benefits increase with earned income. <T t="in-kind transfers" /> may be less efficient than cash (restricts choice) but can be better targeted. Education investment (<T t="human capital" />, Ch. 19) addresses root causes rather than symptoms.</p>
+
+    <DeepDive title="The Efficiency-Equity Tradeoff Across the Course">
+      <p>Every anti-poverty tool involves Ch. 1's fundamental trade-off. Redistribution helps equity but creates DWL. The question is always: how much efficiency loss is this redistribution worth? There is no objectively correct answer — it depends on your philosophical framework (utilitarian, Rawlsian, or libertarian) and empirical judgments about elasticities and incentive effects.</p>
+    </DeepDive>
   </div>);
 }
 
 function Chapter21() {
   return (<div>
-    <SectionTitle>Budget Constraint & Preferences</SectionTitle>
-    <p>The <T t="budget constraint" /> shows affordable combinations given income and prices. Slope = −P₁/P₂ = <T t="opportunity cost" /> (Ch. 1) of Good 1 in terms of Good 2.</p>
-    <p><T t="indifference curve">Indifference curves</T> show equal-satisfaction bundles. Higher = better. Bowed inward (diminishing <T t="marginal rate of substitution">MRS</T> — preference for variety).</p>
+    <SectionTitle>The Budget Constraint</SectionTitle>
+    <p>The <T t="budget constraint" /> shows all affordable combinations of two goods given income and prices. It's a straight line with slope = -P1/P2, which represents the <T t="opportunity cost" /> (Ch. 1) of Good 1 in terms of Good 2 — the rate at which the market lets you trade one for the other.</p>
+    <p>An income increase shifts the budget line outward (parallel). A price change pivots it (the slope changes).</p>
 
-    <SectionTitle>Optimization</SectionTitle>
-    <p>Choose the point on the budget constraint reaching the highest indifference curve. At the optimum:</p>
-    <Formula>MRS = P₁ / P₂ (willingness to trade = market trade rate)</Formula>
+    <SectionTitle>Indifference Curves & Optimization</SectionTitle>
+    <p><T t="indifference curve">Indifference curves</T> show combinations of goods giving equal satisfaction. Higher curves are better. They slope downward (giving up one good requires more of the other), don't cross, and bow inward (reflecting diminishing <T t="marginal rate of substitution">MRS</T> — the more of a good you have, the less you value one more unit).</p>
+    <p>The consumer chooses the point on the budget constraint that reaches the highest indifference curve. At the optimum:</p>
+    <Formula>MRS = P1 / P2 (willingness to trade = market trade rate)</Formula>
+    <p>This is the individual-level foundation of <T t="allocative efficiency" /> (Ch. 7): prices guide each consumer to their best feasible outcome.</p>
+    <Intuition>The bowed shape reflects a preference for variety. If you have 10 pizzas and 1 salad, you'd trade several pizzas for one salad. This is Ch. 1's marginal thinking made visual.</Intuition>
 
-    <SectionTitle>Deriving Demand</SectionTitle>
-    <p>When price changes, two effects: <T t="substitution effect" /> (always opposes price change) and <T t="income effect" /> (purchasing power shift). For normal goods both reinforce → demand slopes down (Ch. 4). <T t="giffen good">Giffen goods</T> are the ultra-rare exception.</p>
-    <Intuition>This chapter reveals the engine behind the demand curve from Ch. 4. The "law of demand" emerges from rational consumer choice.</Intuition>
+    <SectionTitle>Deriving the Demand Curve</SectionTitle>
+    <p>When a good's price changes, two effects occur simultaneously. The <T t="substitution effect" /> always opposes the price change — a cheaper good becomes relatively more attractive. The <T t="income effect" /> reflects the change in purchasing power — a price drop makes you effectively richer.</p>
+    <p>For normal goods, both effects reinforce each other, so demand slopes down (Ch. 4). For inferior goods, the effects oppose each other, but the substitution effect usually dominates. For the extremely rare <T t="giffen good" />, the income effect dominates for an inferior good that's a large share of the budget, producing an upward-sloping demand curve.</p>
+
+    <DeepDive title="Why This Chapter Matters">
+      <p>This chapter reveals the engine behind Ch. 4's demand curve. The "law of demand" isn't just an empirical observation — it emerges logically from rational consumer choice. Every time you use a demand curve in this course, this optimization framework is running underneath. The <T t="substitution effect" /> and <T t="income effect" /> decomposition also appears in Ch. 18's labor supply analysis (work vs. leisure tradeoff).</p>
+    </DeepDive>
   </div>);
 }
 
