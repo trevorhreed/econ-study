@@ -1,0 +1,1193 @@
+import { useState, useRef, useEffect } from "react";
+import {
+  LineChart, Line, XAxis, YAxis, CartesianGrid,
+  ReferenceLine, ResponsiveContainer, Tooltip as RTooltip, ComposedChart,
+  ReferenceDot, Label
+} from "recharts";
+
+// ─── CONSTANTS & THEME ───────────────────────────────────────────────
+const COLORS = {
+  bg: "#0d1117",
+  card: "#161b22",
+  cardHover: "#1c2333",
+  border: "#30363d",
+  text: "#c9d1d9",
+  textMuted: "#8b949e",
+  heading: "#e6edf3",
+  accent: "#58a6ff",
+  accentDim: "#1f6feb33",
+  supply: "#f0883e",
+  demand: "#58a6ff",
+  surplus: "#3fb95044",
+  dwl: "#f8514944",
+  mc: "#f0883e",
+  atc: "#58a6ff",
+  mr: "#bc8cff",
+  green: "#3fb950",
+  red: "#da3633",
+  yellow: "#d29922",
+  purple: "#bc8cff",
+};
+
+const FONTS = {
+  display: "'Playfair Display', Georgia, serif",
+  body: "'Source Sans 3', 'Segoe UI', sans-serif",
+  mono: "'JetBrains Mono', 'Fira Code', monospace",
+};
+
+// ─── TOOLTIP DEFINITIONS ─────────────────────────────────────────────
+const GLOSSARY = {
+  "equilibrium": "The price-quantity point where supply meets demand; the market clears with no surplus or shortage.",
+  "equilibrium price": "The price at which quantity demanded equals quantity supplied.",
+  "equilibrium quantity": "The quantity traded when the market is at equilibrium.",
+  "consumer surplus": "The difference between what consumers are willing to pay and what they actually pay. Graphically: area below the demand curve and above the market price.",
+  "producer surplus": "The difference between the market price and sellers' cost of production. Graphically: area above the supply curve and below the market price.",
+  "total surplus": "Consumer surplus + Producer surplus. Measures the total net benefit society gets from trade in a market.",
+  "deadweight loss": "Lost total surplus caused by a market distortion (tax, price control, monopoly). Represents trades that would have been mutually beneficial but don't happen.",
+  "dwl": "Deadweight loss — lost total surplus from a market distortion.",
+  "elasticity": "How responsive quantity demanded or supplied is to a change in price. High elasticity = very responsive; low elasticity = unresponsive.",
+  "inelastic": "Low responsiveness to price changes. Quantity barely moves when price changes. Steep curve on a standard graph.",
+  "elastic": "High responsiveness to price changes. Quantity changes a lot when price changes. Flat curve on a standard graph.",
+  "price ceiling": "A legal maximum price set by the government. Binding when set below the equilibrium price, causing a shortage.",
+  "price floor": "A legal minimum price set by the government. Binding when set above the equilibrium price, causing a surplus.",
+  "shortage": "Quantity demanded exceeds quantity supplied. Occurs when price is held below equilibrium.",
+  "surplus": "Quantity supplied exceeds quantity demanded. Occurs when price is held above equilibrium. (Not the same as consumer/producer surplus.)",
+  "tax wedge": "The gap between the price buyers pay and the price sellers receive, equal to the tax amount.",
+  "statutory incidence": "Who is legally responsible for paying the tax (writes the check to the government).",
+  "economic incidence": "Who actually bears the economic burden of the tax (may differ from statutory incidence).",
+  "laffer curve": "The idea that as tax rates rise from zero, tax revenue first increases then eventually decreases (because very high taxes destroy the tax base).",
+  "marginal cost": "The additional cost of producing one more unit. Key decision-making concept: firms compare MC to price/MR to decide output.",
+  "mc": "Marginal cost — the cost of producing one additional unit.",
+  "average total cost": "Total cost divided by quantity produced. ATC = AFC + AVC. The U-shape comes from spreading fixed costs then rising marginal costs.",
+  "atc": "Average total cost — total cost ÷ quantity.",
+  "average fixed cost": "Fixed costs divided by quantity. Always decreasing (spreading fixed costs over more units).",
+  "afc": "Average fixed cost — fixed costs ÷ quantity. Always declines.",
+  "average variable cost": "Variable costs divided by quantity. Eventually rises due to diminishing returns.",
+  "avc": "Average variable cost — variable costs ÷ quantity.",
+  "fixed costs": "Costs that don't change with output (e.g., rent, equipment leases). Present even at zero production.",
+  "variable costs": "Costs that change with output (e.g., raw materials, hourly labor).",
+  "total cost": "Fixed costs + variable costs. The entire cost of producing a given quantity.",
+  "economies of scale": "When increasing production causes average total cost to fall. Typically occurs at low output levels.",
+  "diseconomies of scale": "When increasing production causes average total cost to rise. Typically occurs at high output levels due to coordination problems.",
+  "diminishing marginal returns": "As more of one input is added (holding others fixed), the additional output from each extra unit eventually decreases.",
+  "efficient scale": "The quantity that minimizes average total cost. Where MC crosses ATC.",
+  "monopoly": "A single seller in a market with no close substitutes and high barriers to entry.",
+  "market power": "The ability of a firm to set its own price above marginal cost (i.e., the firm is a price maker, not a price taker).",
+  "price maker": "A firm with market power that can choose its price (as opposed to a price taker in a competitive market).",
+  "price taker": "A firm in a competitive market that must accept the market price — too small to influence it.",
+  "marginal revenue": "The additional revenue from selling one more unit. For a monopoly, MR < price because cutting price to sell one more unit reduces revenue on all previous units.",
+  "mr": "Marginal revenue — extra revenue from one more unit sold.",
+  "natural monopoly": "A monopoly that arises because a single firm can supply the market at lower ATC than multiple firms could. Occurs when ATC is still declining at market-relevant quantities.",
+  "price discrimination": "Charging different prices to different consumers for the same good, based on willingness to pay.",
+  "allocative efficiency": "Resources are allocated to produce the combination of goods most valued by society. Occurs where P = MC.",
+  "productive efficiency": "Goods are produced at the lowest possible cost. Occurs at the minimum of ATC.",
+  "pareto efficiency": "No one can be made better off without making someone else worse off.",
+  "welfare economics": "The study of how resource allocation affects economic well-being (consumer surplus, producer surplus, total surplus).",
+};
+
+// ─── COMPONENTS ──────────────────────────────────────────────────────
+
+function TermTip({ term, children }) {
+  const [show, setShow] = useState(false);
+  const key = term.toLowerCase();
+  const def = GLOSSARY[key];
+  if (!def) return <span style={{ color: COLORS.accent, fontWeight: 600 }}>{children || term}</span>;
+  return (
+    <span
+      style={{ position: "relative", display: "inline" }}
+      onMouseEnter={() => setShow(true)}
+      onMouseLeave={() => setShow(false)}
+    >
+      <span style={{
+        color: COLORS.accent,
+        borderBottom: `1px dashed ${COLORS.accent}88`,
+        cursor: "help",
+        fontWeight: 600,
+      }}>
+        {children || term}
+      </span>
+      {show && (
+        <span style={{
+          position: "absolute",
+          bottom: "calc(100% + 8px)",
+          left: "50%",
+          transform: "translateX(-50%)",
+          background: "#1c2333",
+          border: `1px solid ${COLORS.border}`,
+          borderRadius: 8,
+          padding: "10px 14px",
+          fontSize: 15,
+          lineHeight: 1.6,
+          color: COLORS.text,
+          width: 300,
+          zIndex: 1000,
+          boxShadow: "0 8px 32px #00000088",
+          pointerEvents: "none",
+        }}>
+          <span style={{ fontWeight: 700, color: COLORS.heading, display: "block", marginBottom: 4, textTransform: "capitalize" }}>{term}</span>
+          {def}
+        </span>
+      )}
+    </span>
+  );
+}
+
+function T({ t, children }) {
+  return <TermTip term={t}>{children}</TermTip>;
+}
+
+function Expandable({ title, children, defaultOpen = false }) {
+  const [open, setOpen] = useState(defaultOpen);
+  return (
+    <div style={{
+      border: `1px solid ${COLORS.border}`,
+      borderRadius: 8,
+      marginBottom: 12,
+      background: open ? COLORS.card : "transparent",
+      transition: "all 0.2s ease",
+    }}>
+      <button
+        onClick={() => setOpen(!open)}
+        style={{
+          width: "100%",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          padding: "14px 18px",
+          background: "none",
+          border: "none",
+          color: COLORS.heading,
+          fontSize: 17,
+          fontWeight: 700,
+          cursor: "pointer",
+          fontFamily: FONTS.body,
+          textAlign: "left",
+        }}
+      >
+        <span>{title}</span>
+        <span style={{
+          transform: open ? "rotate(180deg)" : "rotate(0deg)",
+          transition: "transform 0.2s ease",
+          fontSize: 14,
+          color: COLORS.textMuted,
+        }}>▼</span>
+      </button>
+      {open && (
+        <div style={{ padding: "0 18px 18px", lineHeight: 1.8, fontSize: 17, color: COLORS.text }}>
+          {children}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function Intuition({ children }) {
+  return (
+    <div style={{
+      borderLeft: `3px solid ${COLORS.yellow}`,
+      background: `${COLORS.yellow}0a`,
+      padding: "12px 16px",
+      borderRadius: "0 8px 8px 0",
+      margin: "16px 0",
+      fontSize: 16,
+      lineHeight: 1.8,
+    }}>
+      <span style={{ fontWeight: 700, color: COLORS.yellow, marginRight: 8 }}>💡 INTUITION:</span>
+      {children}
+    </div>
+  );
+}
+
+function Formula({ children }) {
+  return (
+    <div style={{
+      background: "#0d111799",
+      border: `1px solid ${COLORS.border}`,
+      borderRadius: 6,
+      padding: "10px 16px",
+      margin: "12px 0",
+      fontFamily: FONTS.mono,
+      fontSize: 16,
+      color: COLORS.accent,
+      letterSpacing: 0.5,
+    }}>
+      {children}
+    </div>
+  );
+}
+
+function SectionTitle({ children }) {
+  return (
+    <h3 style={{
+      fontFamily: FONTS.display,
+      fontSize: 26,
+      color: COLORS.heading,
+      marginTop: 36,
+      marginBottom: 16,
+      paddingBottom: 8,
+      borderBottom: `1px solid ${COLORS.border}`,
+    }}>{children}</h3>
+  );
+}
+
+// ─── INTERACTIVE GRAPHS ──────────────────────────────────────────────
+
+function SupplyDemandGraph({ priceLine, priceLabel, showDWL, showTaxWedge, taxAmount = 0 }) {
+  const [ceilingPrice, setCeilingPrice] = useState(priceLine || null);
+  const [mode, setMode] = useState(priceLine ? "ceiling" : "free");
+
+  const data = [];
+  for (let q = 0; q <= 100; q += 2) {
+    const pD = 100 - q;
+    const pS = 10 + 0.8 * q;
+    data.push({ q, demand: pD, supply: pS });
+  }
+
+  const eqQ = 50;
+  const eqP = 50;
+
+  const controlledPrice = mode === "ceiling" ? 30 : mode === "floor" ? 70 : null;
+
+  return (
+    <div style={{ margin: "20px 0" }}>
+      <div style={{ display: "flex", gap: 8, marginBottom: 12, flexWrap: "wrap" }}>
+        {["free", "ceiling", "floor"].map(m => (
+          <button
+            key={m}
+            onClick={() => setMode(m)}
+            style={{
+              padding: "6px 14px",
+              borderRadius: 6,
+              border: `1px solid ${mode === m ? COLORS.accent : COLORS.border}`,
+              background: mode === m ? COLORS.accentDim : "transparent",
+              color: mode === m ? COLORS.accent : COLORS.textMuted,
+              cursor: "pointer",
+              fontSize: 15,
+              fontFamily: FONTS.body,
+              fontWeight: mode === m ? 700 : 400,
+            }}
+          >
+            {m === "free" ? "Free Market" : m === "ceiling" ? "Price Ceiling ($30)" : "Price Floor ($70)"}
+          </button>
+        ))}
+      </div>
+      <ResponsiveContainer width="100%" height={320}>
+        <ComposedChart data={data} margin={{ top: 10, right: 20, bottom: 20, left: 20 }}>
+          <CartesianGrid strokeDasharray="3 3" stroke={COLORS.border} />
+          <XAxis dataKey="q" label={{ value: "Quantity", position: "bottom", fill: COLORS.textMuted, fontSize: 12 }} tick={{ fill: COLORS.textMuted, fontSize: 11 }} stroke={COLORS.border} />
+          <YAxis domain={[0, 110]} label={{ value: "Price ($)", angle: -90, position: "insideLeft", fill: COLORS.textMuted, fontSize: 12 }} tick={{ fill: COLORS.textMuted, fontSize: 11 }} stroke={COLORS.border} />
+          <Line type="linear" dataKey="demand" stroke={COLORS.demand} strokeWidth={2.5} dot={false} name="Demand" />
+          <Line type="linear" dataKey="supply" stroke={COLORS.supply} strokeWidth={2.5} dot={false} name="Supply" />
+          <ReferenceDot x={eqQ} y={eqP} r={6} fill={COLORS.green} stroke={COLORS.green} />
+          {controlledPrice && (
+            <ReferenceLine y={controlledPrice} stroke={COLORS.yellow} strokeWidth={2} strokeDasharray="8 4">
+              <Label value={mode === "ceiling" ? "Ceiling" : "Floor"} fill={COLORS.yellow} fontSize={12} position="right" />
+            </ReferenceLine>
+          )}
+        </ComposedChart>
+      </ResponsiveContainer>
+      <div style={{
+        background: COLORS.card,
+        border: `1px solid ${COLORS.border}`,
+        borderRadius: 8,
+        padding: "12px 16px",
+        fontSize: 16,
+        lineHeight: 1.8,
+        color: COLORS.text,
+      }}>
+        {mode === "free" && (
+          <>
+            <strong style={{ color: COLORS.green }}>Equilibrium:</strong> P = $50, Q = 50. The green dot marks where supply meets demand. All mutually beneficial trades occur — no deadweight loss.
+          </>
+        )}
+        {mode === "ceiling" && (
+          <>
+            <strong style={{ color: COLORS.yellow }}>Price Ceiling at $30 (binding):</strong> At $30, quantity demanded ≈ 70 but quantity supplied ≈ 25. <strong>Shortage of ~45 units.</strong> Sellers can't cover costs → they exit. Buyers compete for scarce goods → black markets, queues, quality degradation.
+          </>
+        )}
+        {mode === "floor" && (
+          <>
+            <strong style={{ color: COLORS.yellow }}>Price Floor at $70 (binding):</strong> At $70, quantity supplied ≈ 75 but quantity demanded ≈ 30. <strong>Surplus of ~45 units.</strong> More is produced than anyone wants to buy. Think minimum wage: more workers want jobs at the high wage than firms want to hire.
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function TaxWedgeGraph() {
+  const [taxRate, setTaxRate] = useState(20);
+  const [demandSlope, setDemandSlope] = useState(1.0);  // steeper = more inelastic
+  const [supplySlope, setSupplySlope] = useState(0.8);
+  const containerRef = useRef(null);
+  const [tri, setTri] = useState(null);
+
+  // Both curves always pass through equilibrium (50, 50)
+  // Demand: P = (50 + 50*sd) - sd*Q
+  // Supply: P = (50 - 50*ss) + ss*Q
+  const sd = demandSlope;
+  const ss = supplySlope;
+  const eqP = 50;
+  const eqQ = 50;
+
+  // With tax: Q_new = 50 - T/(sd+ss)
+  const newQ = Math.max(0, Math.min(100, 50 - taxRate / (sd + ss)));
+  const pBuyers = (50 + 50 * sd) - sd * newQ;
+  const pSellers = (50 - 50 * ss) + ss * newQ;
+  const revenue = Math.round(taxRate * newQ);
+  const dwl = Math.round(0.5 * taxRate * (eqQ - newQ));
+  const buyerBurden = Math.round(pBuyers - eqP);
+  const sellerBurden = Math.round(eqP - pSellers);
+  const buyerPct = taxRate > 0 ? Math.round((ss / (sd + ss)) * 100) : 0;
+  const sellerPct = taxRate > 0 ? 100 - buyerPct : 0;
+
+  const data = [];
+  for (let q = 0; q <= 100; q += 2) {
+    const pD = (50 + 50 * sd) - sd * q;
+    const pS = (50 - 50 * ss) + ss * q;
+    if (pD >= 0 && pD <= 110 && pS >= 0 && pS <= 110) {
+      data.push({ q, demand: Math.round(pD * 10) / 10, supply: Math.round(pS * 10) / 10 });
+    } else {
+      data.push({ q, demand: pD < 0 ? null : pD > 110 ? null : Math.round(pD * 10) / 10, supply: pS < 0 ? null : pS > 110 ? null : Math.round(pS * 10) / 10 });
+    }
+  }
+
+  const measurePlotArea = () => {
+    if (!containerRef.current) return;
+    const gridBg = containerRef.current.querySelector(".recharts-cartesian-grid-bg")
+      || containerRef.current.querySelector(".recharts-cartesian-grid rect");
+    const svgEl = containerRef.current.querySelector("svg.recharts-surface")
+      || containerRef.current.querySelector("svg");
+    if (!gridBg || !svgEl) return;
+
+    const gridRect = gridBg.getBoundingClientRect();
+    const svgRect = svgEl.getBoundingClientRect();
+
+    const left = gridRect.left - svgRect.left;
+    const top = gridRect.top - svgRect.top;
+    const width = gridRect.width;
+    const height = gridRect.height;
+
+    const qMin = 0, qMax = 100, pMin = 0, pMax = 110;
+    const toX = (q) => left + ((q - qMin) / (qMax - qMin)) * width;
+    const toY = (p) => top + (1 - (p - pMin) / (pMax - pMin)) * height;
+
+    setTri({
+      x0: toX(0),
+      x1: toX(newQ), y1: toY(pBuyers),
+      x2: toX(eqQ), y2: toY(eqP),
+      x3: toX(newQ), y3: toY(pSellers),
+    });
+  };
+
+  useEffect(() => {
+    const t = setTimeout(measurePlotArea, 150);
+    return () => clearTimeout(t);
+  }, [taxRate, demandSlope, supplySlope]);
+
+  useEffect(() => {
+    const handler = () => { setTimeout(measurePlotArea, 150); };
+    window.addEventListener("resize", handler);
+    return () => window.removeEventListener("resize", handler);
+  }, [taxRate, demandSlope, supplySlope]);
+
+  const sliderRow = (label, value, setValue, min, max, step, color, desc) => (
+    <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 8, flexWrap: "wrap" }}>
+      <label style={{ fontSize: 15, color: COLORS.textMuted, minWidth: 180 }}>{label}: <strong style={{ color }}>{value.toFixed(1)}</strong> <span style={{ fontSize: 13 }}>({desc})</span></label>
+      <input
+        type="range"
+        min={min}
+        max={max}
+        step={step}
+        value={value}
+        onChange={e => setValue(Number(e.target.value))}
+        style={{ flex: 1, minWidth: 100, accentColor: color }}
+      />
+    </div>
+  );
+
+  return (
+    <div style={{ margin: "20px 0" }}>
+      {sliderRow("Tax amount", taxRate, setTaxRate, 0, 60, 1, COLORS.yellow, `$${taxRate}`)}
+      {sliderRow("Demand slope", demandSlope, setDemandSlope, 0.2, 3.0, 0.1, COLORS.demand, demandSlope >= 2 ? "inelastic" : demandSlope <= 0.5 ? "elastic" : "moderate")}
+      {sliderRow("Supply slope", supplySlope, setSupplySlope, 0.2, 3.0, 0.1, COLORS.supply, supplySlope >= 2 ? "inelastic" : supplySlope <= 0.5 ? "elastic" : "moderate")}
+      <div style={{ display: "flex", gap: 16, marginBottom: 8, fontSize: 14, color: COLORS.textMuted, flexWrap: "wrap" }}>
+        <span><span style={{ display: "inline-block", width: 16, height: 3, background: COLORS.demand, marginRight: 6, verticalAlign: "middle" }} />Demand</span>
+        <span><span style={{ display: "inline-block", width: 16, height: 3, background: COLORS.supply, marginRight: 6, verticalAlign: "middle" }} />Supply</span>
+        {taxRate > 0 && <span><span style={{ display: "inline-block", width: 12, height: 12, background: `${COLORS.yellow}22`, border: `1px dashed ${COLORS.yellow}`, marginRight: 6, verticalAlign: "middle" }} />Tax Revenue</span>}
+        {taxRate > 0 && <span><span style={{ display: "inline-block", width: 12, height: 12, background: COLORS.dwl, border: `1px dashed ${COLORS.red}`, marginRight: 6, verticalAlign: "middle" }} />Deadweight Loss</span>}
+      </div>
+      <div ref={containerRef} style={{ position: "relative" }}>
+        {taxRate > 0 && tri && (
+          <svg style={{ position: "absolute", top: 0, left: 0, width: "100%", height: 320, pointerEvents: "none", zIndex: 5 }}>
+            <rect
+              x={tri.x0}
+              y={tri.y1}
+              width={tri.x1 - tri.x0}
+              height={tri.y3 - tri.y1}
+              fill={`${COLORS.yellow}22`}
+              stroke={COLORS.yellow}
+              strokeWidth={1}
+              strokeDasharray="4 2"
+            />
+            <text
+              x={tri.x0 + (tri.x1 - tri.x0) / 2}
+              y={tri.y1 + (tri.y3 - tri.y1) / 2 + 4}
+              fill={COLORS.yellow}
+              fontSize={10}
+              fontWeight={700}
+              textAnchor="middle"
+            >Tax Revenue</text>
+            <polygon
+              points={`${tri.x1},${tri.y1} ${tri.x2},${tri.y2} ${tri.x3},${tri.y3}`}
+              fill={COLORS.dwl}
+              stroke={COLORS.red}
+              strokeWidth={1.5}
+              strokeDasharray="4 2"
+            />
+            <text
+              x={(tri.x1 + tri.x2 + tri.x3) / 3 - 10}
+              y={(tri.y1 + tri.y2 + tri.y3) / 3 + 4}
+              fill={COLORS.red}
+              fontSize={10}
+              fontWeight={700}
+            >DWL</text>
+          </svg>
+        )}
+        <ResponsiveContainer width="100%" height={320}>
+          <ComposedChart data={data} margin={{ top: 10, right: 20, bottom: 20, left: 20 }}>
+            <CartesianGrid strokeDasharray="3 3" stroke={COLORS.border} fill="transparent" />
+            <XAxis dataKey="q" label={{ value: "Quantity", position: "bottom", fill: COLORS.textMuted, fontSize: 12 }} tick={{ fill: COLORS.textMuted, fontSize: 11 }} stroke={COLORS.border} />
+            <YAxis domain={[0, 110]} label={{ value: "Price ($)", angle: -90, position: "insideLeft", fill: COLORS.textMuted, fontSize: 12 }} tick={{ fill: COLORS.textMuted, fontSize: 11 }} stroke={COLORS.border} />
+            <Line type="linear" dataKey="demand" stroke={COLORS.demand} strokeWidth={2.5} dot={false} name="Demand" connectNulls={false} />
+            <Line type="linear" dataKey="supply" stroke={COLORS.supply} strokeWidth={2.5} dot={false} name="Supply" connectNulls={false} />
+            {taxRate > 0 && (
+              <>
+                <ReferenceLine y={pBuyers} stroke={COLORS.demand} strokeDasharray="6 3" strokeWidth={1.5}>
+                  <Label value={`Buyers pay: $${Math.round(pBuyers)}`} fill={COLORS.demand} fontSize={11} position="right" />
+                </ReferenceLine>
+                <ReferenceLine y={pSellers} stroke={COLORS.supply} strokeDasharray="6 3" strokeWidth={1.5}>
+                  <Label value={`Sellers get: $${Math.round(pSellers)}`} fill={COLORS.supply} fontSize={11} position="right" />
+                </ReferenceLine>
+                <ReferenceLine x={newQ} stroke={COLORS.textMuted} strokeDasharray="4 4">
+                  <Label value={`Q=${Math.round(newQ)}`} fill={COLORS.textMuted} fontSize={11} position="top" />
+                </ReferenceLine>
+              </>
+            )}
+          </ComposedChart>
+        </ResponsiveContainer>
+      </div>
+      <div style={{
+        display: "grid",
+        gridTemplateColumns: "repeat(auto-fit, minmax(120px, 1fr))",
+        gap: 8,
+        marginTop: 8,
+      }}>
+        {[
+          { label: "Tax Wedge", value: `$${taxRate}`, color: COLORS.yellow },
+          { label: "New Quantity", value: Math.round(newQ), color: COLORS.text },
+          { label: "Tax Revenue", value: `$${revenue}`, color: COLORS.yellow },
+          { label: "DWL", value: `≈$${dwl}`, color: COLORS.red },
+          { label: "Buyer Burden", value: `$${buyerBurden} (${buyerPct}%)`, color: COLORS.demand },
+          { label: "Seller Burden", value: `$${sellerBurden} (${sellerPct}%)`, color: COLORS.supply },
+        ].map(({ label, value, color }) => (
+          <div key={label} style={{
+            background: COLORS.card,
+            border: `1px solid ${COLORS.border}`,
+            borderRadius: 8,
+            padding: "10px 14px",
+            textAlign: "center",
+          }}>
+            <div style={{ fontSize: 13, color: COLORS.textMuted }}>{label}</div>
+            <div style={{ fontSize: 18, fontWeight: 700, color, fontFamily: FONTS.mono }}>{value}</div>
+          </div>
+        ))}
+      </div>
+      {taxRate > 0 && (
+        <div style={{
+          background: COLORS.card, border: `1px solid ${COLORS.border}`, borderRadius: 8,
+          padding: "14px 18px", fontSize: 16, lineHeight: 1.8, color: COLORS.text, marginTop: 8,
+        }}>
+          {buyerPct > sellerPct
+            ? <>The <strong style={{ color: COLORS.demand }}>more inelastic</strong> side (demand, steeper slope) bears more of the tax. Buyers can't easily leave the market, so they absorb {buyerPct}% of the burden.</>
+            : buyerPct < sellerPct
+            ? <>The <strong style={{ color: COLORS.supply }}>more inelastic</strong> side (supply, steeper slope) bears more of the tax. Sellers can't easily exit, so they absorb {sellerPct}% of the burden.</>
+            : <>Burden is split equally because both curves have the same slope (same elasticity at equilibrium).</>
+          }
+          {" "}Try making one curve very steep (inelastic) and the other flat (elastic) to see the burden shift dramatically.
+        </div>
+      )}
+    </div>
+  );
+}
+
+function CostCurvesGraph() {
+  const data = [];
+  for (let q = 1; q <= 30; q++) {
+    const fc = 100;
+    const vc = 5 * q + 0.5 * q * q;
+    const tc = fc + vc;
+    const afc = fc / q;
+    const avc = vc / q;
+    const atc = tc / q;
+    const mc = q === 1 ? 5 + 0.5 : 5 + 0.5 * (2 * q - 1);
+    data.push({ q, afc: Math.round(afc * 10) / 10, avc: Math.round(avc * 10) / 10, atc: Math.round(atc * 10) / 10, mc: Math.round(mc * 10) / 10 });
+  }
+  const [showCurves, setShowCurves] = useState({ mc: true, atc: true, avc: true, afc: true });
+
+  return (
+    <div style={{ margin: "20px 0" }}>
+      <div style={{ display: "flex", gap: 8, marginBottom: 12, flexWrap: "wrap" }}>
+        {[
+          { key: "mc", label: "MC", color: COLORS.mc },
+          { key: "atc", label: "ATC", color: COLORS.atc },
+          { key: "avc", label: "AVC", color: COLORS.purple },
+          { key: "afc", label: "AFC", color: COLORS.textMuted },
+        ].map(({ key, label, color }) => (
+          <button
+            key={key}
+            onClick={() => setShowCurves(prev => ({ ...prev, [key]: !prev[key] }))}
+            style={{
+              padding: "5px 12px",
+              borderRadius: 6,
+              border: `1px solid ${showCurves[key] ? color : COLORS.border}`,
+              background: showCurves[key] ? `${color}22` : "transparent",
+              color: showCurves[key] ? color : COLORS.textMuted,
+              cursor: "pointer",
+              fontSize: 14,
+              fontFamily: FONTS.mono,
+              fontWeight: 700,
+            }}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+      <ResponsiveContainer width="100%" height={320}>
+        <LineChart data={data} margin={{ top: 10, right: 20, bottom: 20, left: 20 }}>
+          <CartesianGrid strokeDasharray="3 3" stroke={COLORS.border} />
+          <XAxis dataKey="q" label={{ value: "Quantity", position: "bottom", fill: COLORS.textMuted, fontSize: 12 }} tick={{ fill: COLORS.textMuted, fontSize: 11 }} stroke={COLORS.border} />
+          <YAxis domain={[0, 120]} label={{ value: "Cost ($)", angle: -90, position: "insideLeft", fill: COLORS.textMuted, fontSize: 12 }} tick={{ fill: COLORS.textMuted, fontSize: 11 }} stroke={COLORS.border} />
+          <RTooltip contentStyle={{ background: COLORS.card, border: `1px solid ${COLORS.border}`, borderRadius: 8, fontSize: 12 }} />
+          {showCurves.mc && <Line type="monotone" dataKey="mc" stroke={COLORS.mc} strokeWidth={2.5} dot={false} name="MC" />}
+          {showCurves.atc && <Line type="monotone" dataKey="atc" stroke={COLORS.atc} strokeWidth={2.5} dot={false} name="ATC" />}
+          {showCurves.avc && <Line type="monotone" dataKey="avc" stroke={COLORS.purple} strokeWidth={2.5} dot={false} name="AVC" />}
+          {showCurves.afc && <Line type="monotone" dataKey="afc" stroke={COLORS.textMuted} strokeWidth={2} dot={false} name="AFC" strokeDasharray="6 3" />}
+        </LineChart>
+      </ResponsiveContainer>
+      <div style={{
+        background: COLORS.card, border: `1px solid ${COLORS.border}`, borderRadius: 8,
+        padding: "14px 18px", fontSize: 16, lineHeight: 1.8, color: COLORS.text, marginTop: 4,
+      }}>
+        Toggle curves on/off above. Notice: <strong style={{ color: COLORS.mc }}>MC</strong> crosses <strong style={{ color: COLORS.atc }}>ATC</strong> at ATC's minimum (the efficient scale). When MC &lt; ATC, ATC falls; when MC &gt; ATC, ATC rises. <strong style={{ color: COLORS.textMuted }}>AFC</strong> always declines as you spread fixed costs.
+      </div>
+    </div>
+  );
+}
+
+function MonopolyGraph() {
+  const [showCompare, setShowCompare] = useState(false);
+  const data = [];
+  for (let q = 1; q <= 24; q++) {
+    const p = 120 - 4 * q;
+    const mr = 120 - 8 * q;
+    const mc = 10 + 2 * q;
+    data.push({ q, price: p, mr: mr, mc: mc });
+  }
+
+  const monoQ = 11;
+  const monoP = 120 - 4 * monoQ;
+  const compQ = 18;
+  const compP = 120 - 4 * compQ;
+
+  return (
+    <div style={{ margin: "20px 0" }}>
+      <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
+        <button
+          onClick={() => setShowCompare(false)}
+          style={{
+            padding: "8px 16px", borderRadius: 6, fontSize: 15, fontFamily: FONTS.body, cursor: "pointer",
+            border: `1px solid ${!showCompare ? COLORS.accent : COLORS.border}`,
+            background: !showCompare ? COLORS.accentDim : "transparent",
+            color: !showCompare ? COLORS.accent : COLORS.textMuted,
+            fontWeight: !showCompare ? 700 : 400,
+          }}
+        >Monopoly Only</button>
+        <button
+          onClick={() => setShowCompare(true)}
+          style={{
+            padding: "8px 16px", borderRadius: 6, fontSize: 15, fontFamily: FONTS.body, cursor: "pointer",
+            border: `1px solid ${showCompare ? COLORS.accent : COLORS.border}`,
+            background: showCompare ? COLORS.accentDim : "transparent",
+            color: showCompare ? COLORS.accent : COLORS.textMuted,
+            fontWeight: showCompare ? 700 : 400,
+          }}
+        >Compare to Competition</button>
+      </div>
+      <ResponsiveContainer width="100%" height={340}>
+        <ComposedChart data={data} margin={{ top: 10, right: 20, bottom: 20, left: 20 }}>
+          <CartesianGrid strokeDasharray="3 3" stroke={COLORS.border} />
+          <XAxis dataKey="q" label={{ value: "Quantity", position: "bottom", fill: COLORS.textMuted, fontSize: 12 }} tick={{ fill: COLORS.textMuted, fontSize: 11 }} stroke={COLORS.border} />
+          <YAxis domain={[0, 130]} label={{ value: "$ per unit", angle: -90, position: "insideLeft", fill: COLORS.textMuted, fontSize: 12 }} tick={{ fill: COLORS.textMuted, fontSize: 11 }} stroke={COLORS.border} />
+          <RTooltip contentStyle={{ background: COLORS.card, border: `1px solid ${COLORS.border}`, borderRadius: 8, fontSize: 12 }} />
+          <Line type="linear" dataKey="price" stroke={COLORS.demand} strokeWidth={2.5} dot={false} name="Demand (P)" />
+          <Line type="linear" dataKey="mr" stroke={COLORS.mr} strokeWidth={2} dot={false} name="MR" strokeDasharray="6 3" />
+          <Line type="linear" dataKey="mc" stroke={COLORS.mc} strokeWidth={2.5} dot={false} name="MC" />
+          <ReferenceLine x={monoQ} stroke={COLORS.purple} strokeDasharray="4 4">
+            <Label value={`Qm=${monoQ}`} fill={COLORS.purple} fontSize={11} position="top" />
+          </ReferenceLine>
+          <ReferenceLine y={monoP} stroke={COLORS.purple} strokeDasharray="4 4">
+            <Label value={`Pm=$${monoP}`} fill={COLORS.purple} fontSize={11} position="right" />
+          </ReferenceLine>
+          {showCompare && (
+            <>
+              <ReferenceLine x={compQ} stroke={COLORS.green} strokeDasharray="4 4">
+                <Label value={`Qc≈${compQ}`} fill={COLORS.green} fontSize={11} position="top" />
+              </ReferenceLine>
+              <ReferenceLine y={compP} stroke={COLORS.green} strokeDasharray="4 4">
+                <Label value={`Pc≈$${compP}`} fill={COLORS.green} fontSize={11} position="right" />
+              </ReferenceLine>
+            </>
+          )}
+        </ComposedChart>
+      </ResponsiveContainer>
+      <div style={{
+        background: COLORS.card, border: `1px solid ${COLORS.border}`, borderRadius: 8,
+        padding: "14px 18px", fontSize: 16, lineHeight: 1.8, color: COLORS.text, marginTop: 4,
+      }}>
+        {!showCompare ? (
+          <>
+            <strong style={{ color: COLORS.purple }}>Monopoly outcome:</strong> Firm produces where MR = MC (Q={monoQ}), then charges the maximum price consumers will pay at that quantity: P=${monoP}. Note P &gt; MC — the monopolist has a markup and produces less than is socially optimal.
+          </>
+        ) : (
+          <>
+            <strong style={{ color: COLORS.green }}>Competitive comparison:</strong> A competitive market would produce where P = MC (Q≈{compQ}, P≈${compP}). The monopolist produces {compQ - monoQ} fewer units at ${monoP - compP} higher price. The triangle between Q={monoQ} and Q={compQ} represents the <strong style={{ color: COLORS.red }}>deadweight loss</strong> from monopoly.
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function EfficiencyGraph() {
+  const data = [];
+  for (let q = 0; q <= 100; q += 2) {
+    const pD = 100 - q;
+    const pS = 10 + 0.8 * q;
+    data.push({ q, demand: pD, supply: pS });
+  }
+  const eqQ = 50;
+  const eqP = 50;
+
+  const [highlight, setHighlight] = useState("both");
+
+  return (
+    <div style={{ margin: "20px 0" }}>
+      <div style={{ display: "flex", gap: 8, marginBottom: 12, flexWrap: "wrap" }}>
+        {[
+          { key: "cs", label: "Consumer Surplus", color: COLORS.demand },
+          { key: "ps", label: "Producer Surplus", color: COLORS.supply },
+          { key: "both", label: "Total Surplus", color: COLORS.green },
+        ].map(({ key, label, color }) => (
+          <button
+            key={key}
+            onClick={() => setHighlight(key)}
+            style={{
+              padding: "8px 16px", borderRadius: 6, fontSize: 15, fontFamily: FONTS.body, cursor: "pointer",
+              border: `1px solid ${highlight === key ? color : COLORS.border}`,
+              background: highlight === key ? `${color}22` : "transparent",
+              color: highlight === key ? color : COLORS.textMuted,
+              fontWeight: highlight === key ? 700 : 400,
+            }}
+          >{label}</button>
+        ))}
+      </div>
+      <ResponsiveContainer width="100%" height={320}>
+        <ComposedChart data={data} margin={{ top: 10, right: 20, bottom: 20, left: 20 }}>
+          <CartesianGrid strokeDasharray="3 3" stroke={COLORS.border} />
+          <XAxis dataKey="q" label={{ value: "Quantity", position: "bottom", fill: COLORS.textMuted, fontSize: 12 }} tick={{ fill: COLORS.textMuted, fontSize: 11 }} stroke={COLORS.border} />
+          <YAxis domain={[0, 110]} label={{ value: "Price ($)", angle: -90, position: "insideLeft", fill: COLORS.textMuted, fontSize: 12 }} tick={{ fill: COLORS.textMuted, fontSize: 11 }} stroke={COLORS.border} />
+          <Line type="linear" dataKey="demand" stroke={COLORS.demand} strokeWidth={2.5} dot={false} name="Demand" />
+          <Line type="linear" dataKey="supply" stroke={COLORS.supply} strokeWidth={2.5} dot={false} name="Supply" />
+          <ReferenceLine y={eqP} stroke={COLORS.textMuted} strokeDasharray="4 4" />
+          <ReferenceDot x={eqQ} y={eqP} r={6} fill={COLORS.green} stroke={COLORS.green} />
+        </ComposedChart>
+      </ResponsiveContainer>
+      <div style={{
+        background: COLORS.card, border: `1px solid ${COLORS.border}`, borderRadius: 8,
+        padding: "14px 18px", fontSize: 16, lineHeight: 1.8, color: COLORS.text, marginTop: 4,
+      }}>
+        {highlight === "cs" && (
+          <>
+            <strong style={{ color: COLORS.demand }}>Consumer Surplus</strong> = area below the demand curve, above the price line, from 0 to Q*. It represents the total "bonus" buyers get — the gap between their willingness to pay and what they actually pay. Here: triangle with base 50 and height 50, so CS = ½(50)(50) = $1,250.
+          </>
+        )}
+        {highlight === "ps" && (
+          <>
+            <strong style={{ color: COLORS.supply }}>Producer Surplus</strong> = area above the supply curve, below the price line, from 0 to Q*. It represents sellers' gain — the gap between the price they receive and their cost. Here: triangle with base 50 and height 40, so PS = ½(50)(40) = $1,000.
+          </>
+        )}
+        {highlight === "both" && (
+          <>
+            <strong style={{ color: COLORS.green }}>Total Surplus</strong> = CS + PS = $1,250 + $1,000 = $2,250. At the free-market equilibrium, total surplus is maximized — no rearrangement of resources can make someone better off without making someone else worse off. This is allocative efficiency.
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ─── CHAPTER CONTENT ────────────────────────────────────────────────
+
+function Chapter6_8() {
+  return (
+    <div>
+      <SectionTitle>Price Controls</SectionTitle>
+      <p>
+        In a free market, <T t="equilibrium price">price</T> and <T t="equilibrium quantity">quantity</T> are determined by the intersection of supply and demand. Governments sometimes override this with legal price limits. There are two types:
+      </p>
+
+      <Expandable title="Price Ceilings — The Details" defaultOpen={true}>
+        <p>A <T t="price ceiling" /> is a legal maximum. It's only <strong>binding</strong> (i.e., actually affects the market) if set <em>below</em> <T t="equilibrium price">equilibrium</T>.</p>
+        <p><strong>What happens when it binds:</strong></p>
+        <p>At the artificially low price, quantity demanded rises but quantity supplied falls → <T t="shortage" />. The gap between them is the shortage.</p>
+        <p><strong>Short run vs. long run:</strong> In the short run, both supply and demand are relatively <T t="inelastic" />, so the shortage is small. In the long run, both curves become more <T t="elastic" /> — buyers find more reasons to buy cheap goods, sellers increasingly exit — and the shortage widens dramatically.</p>
+        <p><strong>Side effects:</strong> Rationing problems (who gets the scarce good?), black markets, quality deterioration, discrimination by sellers.</p>
+        <p><strong>Classic example:</strong> Rent control. Short-term, landlords keep renting; long-term, they stop maintaining buildings, convert to condos, and new construction collapses.</p>
+        <Intuition>If you cap the price of something below what it costs to produce, eventually nobody will produce it.</Intuition>
+      </Expandable>
+
+      <Expandable title="Price Floors — The Details">
+        <p>A <T t="price floor" /> is a legal minimum. Binding only if set <em>above</em> <T t="equilibrium price">equilibrium</T>.</p>
+        <p><strong>When it binds:</strong> Quantity supplied exceeds quantity demanded → <T t="surplus" />.</p>
+        <p><strong>Classic example:</strong> Minimum wage. At above-equilibrium wages, firms want fewer workers but more people want jobs → unemployment (a surplus of labor). Low-skill workers are hit hardest — they're the ones priced out entirely.</p>
+        <p><strong>Agricultural price supports</strong> are another example: the government sets a minimum crop price and often must buy the surplus to maintain it.</p>
+        <Intuition>If you force the price of something above what buyers think it's worth, you'll create a pile of unsold goods (or unemployed workers).</Intuition>
+      </Expandable>
+
+      <p style={{ fontWeight: 700, color: COLORS.heading, marginTop: 20 }}>Interactive: Supply, Demand & Price Controls</p>
+      <SupplyDemandGraph />
+
+      <SectionTitle>Taxation</SectionTitle>
+
+      <Expandable title="The Tax Wedge & Incidence" defaultOpen={true}>
+        <p>A tax creates a <T t="tax wedge" /> between the price buyers pay (P_b) and the price sellers receive (P_s). The difference equals the tax: P_b − P_s = tax.</p>
+        <Formula>P_buyers − P_sellers = Tax Amount</Formula>
+        <p><strong>Key insight:</strong> It does not matter whether the tax is legally imposed on buyers or sellers. The market outcome — prices, quantities, and burden — is identical either way. <T t="statutory incidence">Statutory incidence</T> (who writes the check) ≠ <T t="economic incidence">economic incidence</T> (who actually bears the cost).</p>
+        <p><strong>Mechanism (tax on sellers):</strong> Supply shifts up by the tax amount. New equilibrium has lower quantity, higher buyer price, lower seller net price.</p>
+        <p><strong>Mechanism (tax on buyers):</strong> Demand shifts down by the tax amount. Same result.</p>
+        <Intuition>Think of the tax as a wall between buyers and sellers. It doesn't matter which side you build it on — the wall is the same size and creates the same gap.</Intuition>
+      </Expandable>
+
+      <Expandable title="Deadweight Loss from Taxes">
+        <p><T t="deadweight loss">Deadweight loss (DWL)</T> = the <T t="total surplus" /> destroyed because the tax reduces the quantity traded. Trades that would have been mutually beneficial no longer happen.</p>
+        <p><strong>Graphically:</strong> Triangle between the supply curve, demand curve, and the new (reduced) quantity line.</p>
+        <p><strong>Critical relationship:</strong> DWL grows with the <em>square</em> of the tax rate. Double the tax → roughly 4× the DWL. This is because larger taxes cause disproportionately larger reductions in quantity.</p>
+        <Formula>DWL ≈ ½ × tax × ΔQ (triangle)</Formula>
+        <p><strong>DWL is larger when</strong> supply and/or demand are more <T t="elastic" /> (more responsive → bigger quantity reduction).</p>
+        <p><strong>DWL is smaller when</strong> curves are <T t="inelastic" /> (quantity barely changes → small triangle).</p>
+      </Expandable>
+
+      <Expandable title="Tax Burden Distribution">
+        <p>The tax burden falls more on whichever side of the market is more <T t="inelastic" />.</p>
+        <p><strong>Why:</strong> The inelastic side can't easily escape the market. If demand is inelastic (buyers need the good no matter what), buyers absorb most of the tax. If supply is inelastic (sellers are locked in), sellers absorb most.</p>
+        <p><strong>Extreme cases:</strong></p>
+        <p>— Perfectly <T t="inelastic">inelastic</T> demand → buyers bear 100%, no DWL, no quantity change.</p>
+        <p>— Perfectly <T t="elastic">elastic</T> supply → buyers bear 100% of the tax; sellers escape entirely.</p>
+        <Intuition>The side that <em>can't leave</em> gets stuck with the bill.</Intuition>
+      </Expandable>
+
+      <Expandable title="The Laffer Curve">
+        <p>As tax rate rises from 0%, revenue initially increases. But at very high rates, the tax base shrinks (quantity traded collapses) and revenue falls.</p>
+        <p>At 0%: revenue = 0. At 100%: revenue ≈ 0 (nobody trades). Maximum revenue is somewhere in between.</p>
+        <p>This is the <T t="laffer curve" /> logic — higher rates don't always mean more revenue.</p>
+      </Expandable>
+
+      <p style={{ fontWeight: 700, color: COLORS.heading, marginTop: 20 }}>Interactive: Tax Wedge Simulator</p>
+      <p style={{ fontSize: 15, color: COLORS.textMuted }}>Drag the slider to change the tax and watch DWL & revenue respond.</p>
+      <TaxWedgeGraph />
+    </div>
+  );
+}
+
+function Chapter7() {
+  return (
+    <div>
+      <SectionTitle>Welfare Economics</SectionTitle>
+      <p>
+        <T t="welfare economics" /> asks: how does the allocation of resources affect economic well-being? The tools: <T t="consumer surplus" />, <T t="producer surplus" />, and <T t="total surplus" />.
+      </p>
+
+      <Expandable title="Consumer Surplus — Deep Dive" defaultOpen={true}>
+        <p><T t="consumer surplus">Consumer surplus (CS)</T> = willingness to pay minus actual price, summed across all buyers.</p>
+        <p><strong>Willingness to pay</strong> is the maximum a buyer would pay for a good. It's captured by the demand curve — each point on the demand curve represents a buyer's (or a unit's) willingness to pay.</p>
+        <Formula>CS = Area below demand curve, above price, from 0 to Q*</Formula>
+        <p><strong>What changes CS:</strong> A price decrease increases CS (existing buyers get a bigger bonus, and new buyers enter). A price increase does the opposite.</p>
+        <Intuition>CS measures the collective "deal" buyers are getting. If you'd pay $80 for headphones but they cost $50, your surplus is $30. Aggregate that across every buyer.</Intuition>
+      </Expandable>
+
+      <Expandable title="Producer Surplus — Deep Dive">
+        <p><T t="producer surplus">Producer surplus (PS)</T> = price received minus cost of production, summed across all sellers.</p>
+        <p><strong>Cost</strong> here means the minimum a seller would accept — captured by the supply curve.</p>
+        <Formula>PS = Area above supply curve, below price, from 0 to Q*</Formula>
+        <p>Higher prices increase PS; lower prices decrease it.</p>
+        <Intuition>If it costs you $30 to make a widget and you sell it for $50, your surplus is $20. The supply curve shows the "bare minimum" each seller would accept.</Intuition>
+      </Expandable>
+
+      <Expandable title="Total Surplus & Efficiency" defaultOpen={true}>
+        <p><T t="total surplus" /> = CS + PS. It measures the total net benefit to society from trade in a market.</p>
+        <Formula>Total Surplus = CS + PS = (Value to buyers) − (Cost to sellers)</Formula>
+        <p>An allocation is <T t="allocative efficiency">efficient</T> if it maximizes total surplus. The free-market <T t="equilibrium" /> achieves this — any quantity above or below the equilibrium quantity would reduce total surplus.</p>
+        <p><strong>Why equilibrium is efficient:</strong></p>
+        <p>— For every unit up to Q*, the buyer's value (demand) exceeds the seller's cost (supply) → trade creates surplus.</p>
+        <p>— For units beyond Q*, cost exceeds value → producing them destroys surplus.</p>
+        <p>— So producing exactly Q* maximizes total surplus.</p>
+        <Intuition>The free market is like a machine that automatically produces every trade worth making and stops exactly where trades stop being worth it.</Intuition>
+      </Expandable>
+
+      <Expandable title="Market Failure — When Efficiency Breaks Down">
+        <p>The result that free markets maximize total surplus requires assumptions: no <strong>externalities</strong> (costs/benefits spilling onto third parties), no <T t="market power" /> (no one firm controlling price), and full information.</p>
+        <p>When these fail, markets produce the wrong quantity, and <T t="deadweight loss" /> results. Chapters on externalities and monopoly build on this.</p>
+        <p><strong>Government intervention</strong> (taxes, price controls, regulation) can potentially improve efficiency in the presence of market failure — but can also make things worse if poorly designed.</p>
+      </Expandable>
+
+      <p style={{ fontWeight: 700, color: COLORS.heading, marginTop: 20 }}>Interactive: Visualizing Surplus</p>
+      <p style={{ fontSize: 15, color: COLORS.textMuted }}>Toggle between consumer surplus, producer surplus, and total surplus.</p>
+      <EfficiencyGraph />
+
+      <SectionTitle>Evaluating Price Controls & Taxes Through the Efficiency Lens</SectionTitle>
+
+      <Expandable title="How Price Controls Destroy Surplus">
+        <p>A binding <T t="price ceiling" /> or <T t="price floor" /> moves the market away from the efficient quantity. Trades that would have created surplus don't happen.</p>
+        <p><strong>Price ceiling:</strong> Quantity traded falls to quantity supplied (the short side). CS may rise for those who get the good, but total surplus falls because too few units are produced.</p>
+        <p><strong>Price floor:</strong> Quantity traded falls to quantity demanded. PS may rise for sellers who sell, but total surplus falls because too many resources go into production that buyers don't want at that price.</p>
+        <Intuition>Both controls create deadweight loss for the same reason: they prevent mutually beneficial trades from happening.</Intuition>
+      </Expandable>
+
+      <Expandable title="Tax Efficiency Revisited">
+        <p>Taxes reduce quantity traded, creating <T t="deadweight loss" />. The tax revenue is a transfer (from buyers/sellers to government), not a loss — it can still be used. But the DWL triangle represents pure waste: trades that would have made both sides better off, gone.</p>
+        <p>Efficient taxation minimizes DWL per dollar of revenue raised. This means taxing goods with <T t="inelastic" /> demand/supply (where quantity won't change much). This is the logic behind taxing cigarettes, gasoline, and land.</p>
+      </Expandable>
+    </div>
+  );
+}
+
+function Chapter13() {
+  return (
+    <div>
+      <SectionTitle>What Are Costs?</SectionTitle>
+
+      <Expandable title="Explicit vs. Implicit Costs" defaultOpen={true}>
+        <p><strong>Explicit costs:</strong> Out-of-pocket payments to inputs (wages, rent, materials). What accountants track.</p>
+        <p><strong>Implicit costs:</strong> Opportunity costs of resources the firm owns. Example: if you run your own business, your implicit cost includes the salary you gave up by not working elsewhere.</p>
+        <Formula>Economic Profit = Revenue − (Explicit Costs + Implicit Costs)</Formula>
+        <Formula>Accounting Profit = Revenue − Explicit Costs</Formula>
+        <p>Economic profit is always ≤ accounting profit. A firm with zero economic profit is still earning a "normal return" — enough to keep the owner from leaving.</p>
+        <Intuition>Economic cost asks: "What did you sacrifice to do this?" If you use your own building, the cost isn't $0 — it's the rent someone would have paid you.</Intuition>
+      </Expandable>
+
+      <SectionTitle>Production & Costs</SectionTitle>
+
+      <Expandable title="The Production Function & Diminishing Returns" defaultOpen={true}>
+        <p>The <strong>production function</strong> maps inputs → output. As you add more of one input (holding others fixed), output increases — but at a decreasing rate. This is <T t="diminishing marginal returns" />.</p>
+        <p><strong>Example:</strong> One worker bakes 50 cookies. Two workers bake 90 (not 100). Three bake 120. Each additional worker adds less than the previous.</p>
+        <p><strong>Why it matters for costs:</strong> Diminishing returns mean each additional unit of output costs more to produce. This is why the <T t="marginal cost">MC</T> curve eventually slopes upward.</p>
+        <Intuition>If you keep adding cooks to one kitchen, eventually they're bumping into each other. Each new cook contributes less than the last.</Intuition>
+      </Expandable>
+
+      <SectionTitle>The Cost Curves</SectionTitle>
+
+      <Expandable title="Fixed, Variable, and Total Cost" defaultOpen={true}>
+        <p><T t="fixed costs">Fixed costs (FC)</T>: Don't vary with output. Rent, equipment leases, salaried managers. Present even at Q = 0.</p>
+        <p><T t="variable costs">Variable costs (VC)</T>: Change with output. Raw materials, hourly labor, electricity for production.</p>
+        <Formula>TC = FC + VC</Formula>
+        <p>The total cost curve starts at FC (when Q = 0) and rises at an increasing rate (because of diminishing returns).</p>
+      </Expandable>
+
+      <Expandable title="Average Costs — ATC, AVC, AFC" defaultOpen={true}>
+        <Formula>ATC = TC / Q = AFC + AVC</Formula>
+        <Formula>AFC = FC / Q &nbsp;&nbsp;(always declining)</Formula>
+        <Formula>AVC = VC / Q &nbsp;&nbsp;(eventually rising)</Formula>
+        <p><strong>The ATC U-shape:</strong> At low Q, ATC is high because you're spreading fixed costs over very few units (<T t="average fixed cost">AFC</T> is large). As Q rises, AFC falls and ATC drops. But eventually <T t="diminishing marginal returns" /> kick in, AVC rises fast enough to dominate, and ATC starts rising.</p>
+        <p>The bottom of the ATC curve is the <T t="efficient scale" /> — the quantity that minimizes per-unit cost.</p>
+      </Expandable>
+
+      <Expandable title="Marginal Cost — The Key Curve" defaultOpen={true}>
+        <p><T t="marginal cost">Marginal cost (MC)</T> = the cost of producing one additional unit.</p>
+        <Formula>MC = ΔTC / ΔQ</Formula>
+        <p><strong>MC and ATC relationship (critical):</strong></p>
+        <p>When MC &lt; ATC → ATC is falling (producing the next unit is cheaper than average, pulling average down).</p>
+        <p>When MC &gt; ATC → ATC is rising (next unit costs more than average, pulling average up).</p>
+        <p>Therefore: <strong>MC crosses ATC at ATC's minimum.</strong></p>
+        <Intuition>Think of your GPA. If your next semester's grades (MC) are higher than your cumulative GPA (ATC), your GPA rises. If lower, it falls. They're equal at the turning point.</Intuition>
+      </Expandable>
+
+      <p style={{ fontWeight: 700, color: COLORS.heading, marginTop: 20 }}>Interactive: Cost Curves</p>
+      <p style={{ fontSize: 15, color: COLORS.textMuted }}>Toggle curves on/off. Watch how MC crosses ATC at its minimum.</p>
+      <CostCurvesGraph />
+
+      <SectionTitle>Short Run vs. Long Run</SectionTitle>
+
+      <Expandable title="Short-Run vs. Long-Run Costs">
+        <p><strong>Short run:</strong> At least one input is fixed (typically capital — factory size, equipment). Firm can only adjust variable inputs.</p>
+        <p><strong>Long run:</strong> All inputs are variable. Firm can change factory size, relocate, restructure entirely.</p>
+        <p>The long-run ATC curve is an envelope of all possible short-run ATC curves — for each output level, the firm picks the plant size that minimizes cost.</p>
+        <p><strong><T t="economies of scale" />:</strong> Long-run ATC falls as output increases. Causes: specialization, bulk purchasing, spreading large fixed costs.</p>
+        <p><strong>Constant returns to scale:</strong> Long-run ATC stays flat.</p>
+        <p><strong><T t="diseconomies of scale" />:</strong> Long-run ATC rises as output increases. Causes: coordination problems, bureaucracy, communication breakdowns in large organizations.</p>
+        <Intuition>In the short run, you're stuck with your kitchen. In the long run, you can build a bigger kitchen — or a smaller one — optimized for whatever quantity you want to produce.</Intuition>
+      </Expandable>
+    </div>
+  );
+}
+
+function Chapter15() {
+  return (
+    <div>
+      <SectionTitle>Why Monopolies Exist</SectionTitle>
+
+      <Expandable title="Sources of Monopoly Power" defaultOpen={true}>
+        <p>A <T t="monopoly" /> = single seller, no close substitutes, high barriers to entry. Three main sources:</p>
+        <p><strong>1. Exclusive resource ownership:</strong> Rare. Classic (dated) example: De Beers and diamonds.</p>
+        <p><strong>2. Government-created monopolies:</strong> Patents, copyrights, licenses. Government grants exclusive rights, usually to incentivize innovation.</p>
+        <p><strong>3. Natural monopoly:</strong> A <T t="natural monopoly" /> arises when a single firm can serve the entire market at lower <T t="average total cost">ATC</T> than multiple firms could. This happens when there are very large <T t="fixed costs" /> relative to <T t="variable costs" /> — the ATC curve is still declining at market-relevant quantities. Examples: utilities, infrastructure (water, electricity grid).</p>
+        <Intuition>It makes no sense to build two competing sewer systems in one city. The fixed cost is enormous, and once built, the cost per household drops with every connection. One system is cheaper than two.</Intuition>
+      </Expandable>
+
+      <SectionTitle>Monopoly Decision-Making</SectionTitle>
+
+      <Expandable title="Demand, Marginal Revenue & the Key Divergence" defaultOpen={true}>
+        <p>Unlike a competitive firm (<T t="price taker" />), a <T t="price maker">monopolist</T> faces the entire market demand curve. To sell more, it must lower price — not just on the extra unit, but on <em>all</em> units.</p>
+        <p>This means <T t="marginal revenue">MR</T> &lt; Price for every unit after the first.</p>
+        <Formula>MR = Price + (ΔP × Q_existing)</Formula>
+        <p>The second term is negative (price drops on all existing units), so MR is always less than demand/price. On a linear demand curve, the MR curve has the same intercept but <strong>twice the slope</strong>.</p>
+        <Intuition>Imagine you sell 10 widgets at $10 = $100 revenue. To sell 11, you cut price to $9.50 for ALL units. Revenue = 11 × $9.50 = $104.50. MR of the 11th unit = $4.50, not $9.50. You gained $9.50 from the new unit but lost $0.50 × 10 on existing units.</Intuition>
+      </Expandable>
+
+      <Expandable title="Profit Maximization: MR = MC" defaultOpen={true}>
+        <p>The monopolist maximizes profit where <T t="mr">MR</T> = <T t="mc">MC</T>. This gives the profit-maximizing <strong>quantity</strong>.</p>
+        <p>Then the firm reads <strong>up to the demand curve</strong> to find the price consumers will pay for that quantity.</p>
+        <Formula>1. Find Q where MR = MC</Formula>
+        <Formula>2. Price = Demand(Q) — read price off the demand curve</Formula>
+        <Formula>3. Profit = (P − ATC) × Q</Formula>
+        <p><strong>Key:</strong> The monopolist does NOT produce where MC = Demand. That would be the competitive (efficient) outcome. The monopolist produces less and charges more.</p>
+      </Expandable>
+
+      <p style={{ fontWeight: 700, color: COLORS.heading, marginTop: 20 }}>Interactive: Monopoly vs. Competition</p>
+      <p style={{ fontSize: 15, color: COLORS.textMuted }}>Compare monopoly pricing to the competitive outcome.</p>
+      <MonopolyGraph />
+
+      <SectionTitle>The Cost of Monopoly</SectionTitle>
+
+      <Expandable title="Deadweight Loss from Monopoly" defaultOpen={true}>
+        <p>Because the monopolist restricts output below the efficient level, some mutually beneficial trades don't happen. The <T t="deadweight loss" /> is the triangle between demand, MC, from monopoly Q to competitive Q.</p>
+        <p><strong>Redistribution:</strong> Some of what would have been <T t="consumer surplus" /> is transferred to the monopolist as profit (the rectangle of markup × quantity). This is a redistribution, not a pure loss. But the DWL triangle is pure waste.</p>
+        <Intuition>The monopolist's problem isn't that they charge too much per se — it's that they produce too little. The high price is a symptom of restricted output.</Intuition>
+      </Expandable>
+
+      <Expandable title="Price Discrimination">
+        <p><T t="price discrimination" /> = charging different prices to different buyers based on willingness to pay. Types:</p>
+        <p><strong>Perfect (1st degree):</strong> Charge each buyer their max willingness to pay. Captures ALL surplus — CS goes to zero, no DWL (efficient quantity is produced). Theoretical ideal, rarely achieved.</p>
+        <p><strong>2nd degree:</strong> Price varies by quantity purchased (bulk discounts, tiered pricing).</p>
+        <p><strong>3rd degree:</strong> Different prices for different groups (student discounts, senior pricing, geographic pricing).</p>
+        <p><strong>Requirements:</strong> Firm must have market power, must be able to identify willingness to pay, and must prevent resale (arbitrage).</p>
+        <Intuition>Price discrimination can actually increase total welfare by getting output closer to the efficient level — though the surplus goes to the monopolist, not consumers.</Intuition>
+      </Expandable>
+
+      <SectionTitle>Policy Responses</SectionTitle>
+
+      <Expandable title="Government Responses to Monopoly">
+        <p><strong>Antitrust law:</strong> Prevent mergers that would create monopolies; break up existing ones; prohibit anticompetitive practices (price fixing, predatory pricing).</p>
+        <p><strong>Regulation:</strong> Government sets the price. Options:</p>
+        <p>— <strong>Marginal-cost pricing</strong> (P = MC): Efficient but may cause losses for <T t="natural monopoly">natural monopolies</T> (since MC &lt; ATC when ATC is declining).</p>
+        <p>— <strong>Average-cost pricing</strong> (P = ATC): Firm breaks even but quantity is still below the efficient level.</p>
+        <p><strong>Public ownership:</strong> Government runs the monopoly directly. Mixed track record — government enterprises often face poor incentives and inefficiency.</p>
+        <p><strong>Do nothing:</strong> Sometimes the cure is worse than the disease, especially if the market is contestable (potential competitors discipline the monopolist even without entry).</p>
+      </Expandable>
+    </div>
+  );
+}
+
+// ─── MAIN APP ────────────────────────────────────────────────────────
+
+const CHAPTERS = [
+  { id: "ch6-8", label: "Ch. 6/8", title: "Price Controls & Taxation", component: Chapter6_8 },
+  { id: "ch7", label: "Ch. 7", title: "Efficiency", component: Chapter7 },
+  { id: "ch13", label: "Ch. 13", title: "Costs of Production", component: Chapter13 },
+  { id: "ch15", label: "Ch. 15", title: "Monopoly Power", component: Chapter15 },
+];
+
+export default function App() {
+  const [activeChapter, setActiveChapter] = useState("ch6-8");
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const chapter = CHAPTERS.find(c => c.id === activeChapter);
+  const ChapterComponent = chapter.component;
+
+  return (
+    <>
+      <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700;900&family=Source+Sans+3:wght@300;400;600;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet" />
+      <div style={{
+        minHeight: "100vh",
+        background: COLORS.bg,
+        color: COLORS.text,
+        fontFamily: FONTS.body,
+        fontSize: 17,
+        lineHeight: 1.8,
+      }}>
+        {/* Mobile hamburger */}
+        <button
+          onClick={() => setSidebarOpen(!sidebarOpen)}
+          style={{
+            position: "fixed", top: 12, left: 12, zIndex: 1100,
+            background: COLORS.card, border: `1px solid ${COLORS.border}`,
+            borderRadius: 8, padding: "8px 12px", cursor: "pointer",
+            color: COLORS.heading, fontSize: 18, display: "none",
+          }}
+          className="mobile-menu"
+        >
+          ☰
+        </button>
+
+        <div style={{ display: "flex", minHeight: "100vh" }}>
+          {/* Sidebar */}
+          <nav style={{
+            width: 260, minWidth: 260,
+            background: COLORS.card,
+            borderRight: `1px solid ${COLORS.border}`,
+            padding: "32px 0",
+            position: "sticky",
+            top: 0,
+            height: "100vh",
+            overflowY: "auto",
+            flexShrink: 0,
+          }}>
+            <div style={{ padding: "0 24px", marginBottom: 32 }}>
+              <h1 style={{
+                fontFamily: FONTS.display,
+                fontSize: 20,
+                fontWeight: 900,
+                color: COLORS.heading,
+                margin: 0,
+                lineHeight: 1.3,
+              }}>
+                Mankiw Review
+              </h1>
+              <p style={{ fontSize: 13, color: COLORS.textMuted, margin: "6px 0 0" }}>
+                Principles of Economics
+              </p>
+            </div>
+
+            {CHAPTERS.map(ch => (
+              <button
+                key={ch.id}
+                onClick={() => { setActiveChapter(ch.id); setSidebarOpen(false); }}
+                style={{
+                  display: "block",
+                  width: "100%",
+                  textAlign: "left",
+                  padding: "12px 24px",
+                  background: activeChapter === ch.id ? COLORS.accentDim : "transparent",
+                  border: "none",
+                  borderLeft: activeChapter === ch.id ? `3px solid ${COLORS.accent}` : "3px solid transparent",
+                  cursor: "pointer",
+                  fontFamily: FONTS.body,
+                  transition: "all 0.15s ease",
+                }}
+              >
+                <span style={{
+                  fontSize: 12,
+                  fontWeight: 700,
+                  color: activeChapter === ch.id ? COLORS.accent : COLORS.textMuted,
+                  textTransform: "uppercase",
+                  letterSpacing: 1,
+                }}>{ch.label}</span>
+                <br />
+                <span style={{
+                  fontSize: 16,
+                  color: activeChapter === ch.id ? COLORS.heading : COLORS.text,
+                  fontWeight: activeChapter === ch.id ? 600 : 400,
+                }}>{ch.title}</span>
+              </button>
+            ))}
+
+            <div style={{
+              margin: "32px 24px 0",
+              padding: "12px 14px",
+              background: `${COLORS.yellow}0a`,
+              border: `1px solid ${COLORS.yellow}33`,
+              borderRadius: 8,
+              fontSize: 14,
+              color: COLORS.textMuted,
+              lineHeight: 1.6,
+            }}>
+              💡 <strong style={{ color: COLORS.yellow }}>Tip:</strong> Hover underlined terms for definitions. Click ▼ panels to expand.
+            </div>
+          </nav>
+
+          {/* Main content */}
+          <main style={{
+            flex: 1,
+            maxWidth: 780,
+            margin: "0 auto",
+            padding: "40px 32px 80px",
+          }}>
+            <div style={{ marginBottom: 32 }}>
+              <span style={{
+                fontSize: 12,
+                fontWeight: 700,
+                color: COLORS.accent,
+                textTransform: "uppercase",
+                letterSpacing: 1.5,
+              }}>{chapter.label}</span>
+              <h2 style={{
+                fontFamily: FONTS.display,
+                fontSize: 36,
+                fontWeight: 900,
+                color: COLORS.heading,
+                margin: "8px 0 0",
+                lineHeight: 1.2,
+              }}>{chapter.title}</h2>
+            </div>
+
+            <ChapterComponent />
+
+            {/* Nav arrows */}
+            <div style={{
+              display: "flex",
+              justifyContent: "space-between",
+              marginTop: 48,
+              paddingTop: 24,
+              borderTop: `1px solid ${COLORS.border}`,
+            }}>
+              {(() => {
+                const idx = CHAPTERS.findIndex(c => c.id === activeChapter);
+                const prev = idx > 0 ? CHAPTERS[idx - 1] : null;
+                const next = idx < CHAPTERS.length - 1 ? CHAPTERS[idx + 1] : null;
+                return (
+                  <>
+                    {prev ? (
+                      <button onClick={() => { setActiveChapter(prev.id); window.scrollTo(0, 0); }} style={{
+                        background: "none", border: `1px solid ${COLORS.border}`, borderRadius: 8,
+                        padding: "10px 18px", cursor: "pointer", color: COLORS.text, fontFamily: FONTS.body, fontSize: 16,
+                      }}>
+                        ← {prev.label}: {prev.title}
+                      </button>
+                    ) : <div />}
+                    {next ? (
+                      <button onClick={() => { setActiveChapter(next.id); window.scrollTo(0, 0); }} style={{
+                        background: COLORS.accentDim, border: `1px solid ${COLORS.accent}44`, borderRadius: 8,
+                        padding: "10px 18px", cursor: "pointer", color: COLORS.accent, fontFamily: FONTS.body, fontSize: 16, fontWeight: 600,
+                      }}>
+                        {next.label}: {next.title} →
+                      </button>
+                    ) : <div />}
+                  </>
+                );
+              })()}
+            </div>
+          </main>
+        </div>
+      </div>
+    </>
+  );
+}
