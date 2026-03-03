@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Mankiw Review — Principles of Economics</title>
-  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Outfit:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700;800&family=Outfit:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet" />
   <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/prop-types/15.8.1/prop-types.min.js"></script>
@@ -26,19 +26,21 @@
         radial-gradient(ellipse 40% 40% at 50% 50%, rgba(139,92,246,0.06) 0%, transparent 50%);
       background-attachment: fixed;
       min-height: 100vh;
+      font-size: 24px;
+      line-height: 1.7;
     }
     #root { min-height: 100vh; }
     ::-webkit-scrollbar { width: 6px; }
     ::-webkit-scrollbar-track { background: transparent; }
     ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 3px; }
     ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.2); }
-    @keyframes fadeIn { from { opacity:0; transform:translateY(12px); } to { opacity:1; transform:translateY(0); } }
-    @keyframes shimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
+    @keyframes fadeIn { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
+    @keyframes slideIn { from { opacity:0; transform:translateX(-8px); } to { opacity:1; transform:translateX(0); } }
+    @keyframes expandDown { from { opacity:0; max-height:0; } to { opacity:1; max-height:2000px; } }
+    @keyframes tooltipIn { from { opacity:0; transform:translateX(-50%) translateY(4px); } to { opacity:1; transform:translateX(-50%) translateY(0); } }
+    .sidebar { transition: transform 0.3s cubic-bezier(0.4,0,0.2,1); }
     @media (max-width: 900px) {
-      .mobile-menu { display: block !important; }
-      .sidebar { display: none !important; }
-      .sidebar.open { display: block !important; position: fixed !important; z-index: 1200 !important; left: 0; top: 0; height: 100vh; }
-      main { padding: 24px 16px 60px !important; }
+      main { padding: 28px 20px 60px !important; }
     }
   </style>
 </head>
@@ -78,7 +80,7 @@ const C = {
 };
 
 const F = {
-  display: "'DM Serif Display', Georgia, serif",
+  display: "'Sora', 'Outfit', sans-serif",
   body: "'Outfit', 'Segoe UI', sans-serif",
   mono: "'JetBrains Mono', monospace",
 };
@@ -239,17 +241,18 @@ function TermTip({ term, children }) {
   return (
     <span style={{ position: "relative", display: "inline" }}
       onMouseEnter={() => setShow(true)} onMouseLeave={() => setShow(false)}>
-      <span style={{ color: C.accent, borderBottom: `1px dashed ${C.accent}66`, cursor: "help", fontWeight: 500 }}>
+      <span style={{ color: C.accent, borderBottom: `1px dashed ${C.accent}88`, cursor: "help", fontWeight: 500, transition: "color 0.2s ease" }}>
         {children || term}
       </span>
       {show && (
         <span style={{
           position: "absolute", bottom: "calc(100% + 10px)", left: "50%", transform: "translateX(-50%)",
-          ...glassPanel, background: "rgba(15,15,30,0.92)", backdropFilter: "blur(24px)",
-          padding: "12px 16px", fontSize: 14, lineHeight: 1.6, color: C.text, width: 300, zIndex: 1000,
-          boxShadow: "0 12px 40px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.06)",
+          ...glassPanel, background: "rgba(15,15,30,0.95)", backdropFilter: "blur(28px)",
+          padding: "16px 20px", fontSize: 18, lineHeight: 1.65, color: "rgba(255,255,255,0.85)", width: 340, zIndex: 1000,
+          boxShadow: "0 16px 48px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.08)",
+          animation: "tooltipIn 0.2s ease",
         }}>
-          <span style={{ fontWeight: 600, color: C.heading, display: "block", marginBottom: 4, textTransform: "capitalize", fontSize: 13, letterSpacing: 0.5 }}>{term}</span>
+          <span style={{ fontWeight: 600, color: C.accent, display: "block", marginBottom: 6, textTransform: "capitalize", fontSize: 18, letterSpacing: 0.3 }}>{term}</span>
           {def}
         </span>
       )}
@@ -271,17 +274,17 @@ function DeepDive({ title, children }) {
     }}>
       <button onClick={() => setOpen(!open)} style={{
         width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between",
-        padding: "14px 20px", background: "none", border: "none", color: C.heading,
-        fontSize: 16, fontWeight: 600, cursor: "pointer", fontFamily: F.body, textAlign: "left",
+        padding: "18px 24px", background: "none", border: "none", color: C.heading,
+        fontSize: 22, fontWeight: 600, cursor: "pointer", fontFamily: F.body, textAlign: "left",
       }}>
         <span style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <span style={{ fontSize: 11, color: C.accent, background: C.accentDim, padding: "2px 8px", borderRadius: 6, fontWeight: 700, letterSpacing: 0.5 }}>DEEP DIVE</span>
+          <span style={{ fontSize: 18, color: C.accent, background: C.accentDim, padding: "2px 8px", borderRadius: 6, fontWeight: 700, letterSpacing: 0.5 }}>DEEP DIVE</span>
           {title}
         </span>
-        <span style={{ transform: open ? "rotate(180deg)" : "rotate(0deg)", transition: "transform 0.3s ease", fontSize: 12, color: C.textMuted }}>▼</span>
+        <span style={{ transform: open ? "rotate(180deg)" : "rotate(0deg)", transition: "transform 0.3s cubic-bezier(0.4,0,0.2,1)", fontSize: 18, color: C.textMuted }}>▼</span>
       </button>
       {open && (
-        <div style={{ padding: "0 20px 20px", lineHeight: 1.85, fontSize: 16, color: C.text, animation: "fadeIn 0.3s ease" }}>
+        <div style={{ padding: "0 24px 24px", lineHeight: 1.7, fontSize: 24, color: C.text, animation: "fadeIn 0.3s ease" }}>
           {children}
         </div>
       )}
@@ -295,9 +298,9 @@ function Intuition({ children }) {
       borderLeft: `2px solid ${C.yellow}`,
       background: "rgba(251,191,36,0.04)",
       padding: "12px 16px", borderRadius: "0 12px 12px 0", margin: "16px 0",
-      fontSize: 15, lineHeight: 1.8,
+      fontSize: 22, lineHeight: 1.7,
     }}>
-      <span style={{ fontWeight: 700, color: C.yellow, marginRight: 8, fontSize: 13, letterSpacing: 0.5 }}>💡 INTUITION</span><br />
+      <span style={{ fontWeight: 600, color: C.yellow, marginRight: 8, fontSize: 18, letterSpacing: 0.3 }}>💡 INTUITION</span><br />
       <span style={{ color: "rgba(255,255,255,0.78)" }}>{children}</span>
     </div>
   );
@@ -308,7 +311,7 @@ function Formula({ children }) {
     <div style={{
       background: "rgba(129,140,248,0.06)", border: `1px solid rgba(129,140,248,0.15)`,
       borderRadius: 10, padding: "10px 16px", margin: "12px 0",
-      fontFamily: F.mono, fontSize: 15, color: C.accent, letterSpacing: 0.5,
+      fontFamily: F.mono, fontSize: 20, color: C.accent, letterSpacing: 0.3,
     }}>
       {children}
     </div>
@@ -318,8 +321,8 @@ function Formula({ children }) {
 function SectionTitle({ children }) {
   return (
     <h3 style={{
-      fontFamily: F.display, fontSize: 26, color: C.heading,
-      marginTop: 40, marginBottom: 16, paddingBottom: 10,
+      fontFamily: F.display, fontSize: 30, color: C.heading, fontWeight: 700,
+      marginTop: 44, marginBottom: 18, paddingBottom: 12,
       borderBottom: `1px solid ${C.glassBorder}`,
     }}>{children}</h3>
   );
@@ -339,7 +342,7 @@ function SupplyDemandGraph() {
       <div style={{ display: "flex", gap: 8, marginBottom: 12, flexWrap: "wrap" }}>
         {["free", "ceiling", "floor"].map(m => (
           <button key={m} onClick={() => setMode(m)} style={{
-            padding: "8px 16px", borderRadius: 10, fontSize: 14, fontFamily: F.body, cursor: "pointer",
+            padding: "10px 18px", borderRadius: 10, fontSize: 20, fontFamily: F.body, cursor: "pointer", transition: "all 0.2s ease",
             ...glassPanel, background: mode === m ? C.accentDim : C.glass,
             borderColor: mode === m ? C.accent + "44" : C.glassBorder,
             color: mode === m ? C.accent : C.textMuted, fontWeight: mode === m ? 700 : 400,
@@ -351,19 +354,19 @@ function SupplyDemandGraph() {
       <ResponsiveContainer width="100%" height={320}>
         <ComposedChart data={data} margin={{ top: 10, right: 20, bottom: 20, left: 20 }}>
           <CartesianGrid strokeDasharray="3 3" stroke={C.gridLine} />
-          <XAxis dataKey="q" label={{ value: "Quantity", position: "bottom", fill: C.textMuted, fontSize: 12 }} tick={{ fill: C.textMuted, fontSize: 11 }} stroke={C.gridLine} />
-          <YAxis domain={[0, 110]} label={{ value: "Price ($)", angle: -90, position: "insideLeft", fill: C.textMuted, fontSize: 12 }} tick={{ fill: C.textMuted, fontSize: 11 }} stroke={C.gridLine} />
+          <XAxis dataKey="q" label={{ value: "Quantity", position: "bottom", fill: C.textMuted, fontSize: 18 }} tick={{ fill: C.textMuted, fontSize: 18 }} stroke={C.gridLine} />
+          <YAxis domain={[0, 110]} label={{ value: "Price ($)", angle: -90, position: "insideLeft", fill: C.textMuted, fontSize: 18 }} tick={{ fill: C.textMuted, fontSize: 18 }} stroke={C.gridLine} />
           <Line type="linear" dataKey="demand" stroke={C.demand} strokeWidth={2.5} dot={false} />
           <Line type="linear" dataKey="supply" stroke={C.supply} strokeWidth={2.5} dot={false} />
           <ReferenceDot x={eqQ} y={eqP} r={6} fill={C.green} stroke={C.green} />
           {controlledPrice && (
             <ReferenceLine y={controlledPrice} stroke={C.yellow} strokeWidth={2} strokeDasharray="8 4">
-              <Label value={mode === "ceiling" ? "Ceiling" : "Floor"} fill={C.yellow} fontSize={12} position="right" />
+              <Label value={mode === "ceiling" ? "Ceiling" : "Floor"} fill={C.yellow} fontSize={18} position="right" />
             </ReferenceLine>
           )}
         </ComposedChart>
       </ResponsiveContainer>
-      <div style={{ ...glassCard, fontSize: 15, lineHeight: 1.8, color: C.text, marginTop: 8 }}>
+      <div style={{ ...glassCard, fontSize: 22, lineHeight: 1.7, color: C.text, marginTop: 10 }}>
         {mode === "free" && <><strong style={{ color: C.green }}>Equilibrium:</strong> P = $50, Q = 50. All mutually beneficial trades occur.</>}
         {mode === "ceiling" && <><strong style={{ color: C.yellow }}>Price Ceiling at $30:</strong> Qd ≈ 70, Qs ≈ 25. <strong>Shortage of ~45 units.</strong> Black markets, queues, quality degradation.</>}
         {mode === "floor" && <><strong style={{ color: C.yellow }}>Price Floor at $70:</strong> Qs ≈ 75, Qd ≈ 30. <strong>Surplus of ~45 units.</strong> Think minimum wage.</>}
@@ -416,7 +419,7 @@ function TaxWedgeGraph() {
 
   const sliderRow = (label, value, setValue, min, max, step, color, desc) => (
     <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 8, flexWrap: "wrap" }}>
-      <label style={{ fontSize: 14, color: C.textMuted, minWidth: 180 }}>{label}: <strong style={{ color }}>{typeof value === "number" && value % 1 !== 0 ? value.toFixed(1) : value}</strong> <span style={{ fontSize: 12, opacity: 0.7 }}>({desc})</span></label>
+      <label style={{ fontSize: 20, color: C.textMuted, minWidth: 220 }}>{label}: <span style={{ color, fontWeight: 600 }}>{typeof value === "number" && value % 1 !== 0 ? value.toFixed(1) : value}</span> <span style={{ fontSize: 18, opacity: 0.7 }}>({desc})</span></label>
       <input type="range" min={min} max={max} step={step} value={value}
         onChange={e => setValue(Number(e.target.value))} style={{ flex: 1, minWidth: 100, accentColor: color }} />
     </div>
@@ -427,7 +430,7 @@ function TaxWedgeGraph() {
       {sliderRow("Tax amount", taxRate, setTaxRate, 0, 60, 1, C.yellow, `$${taxRate}`)}
       {sliderRow("Demand slope", demandSlope, setDemandSlope, 0.2, 3.0, 0.1, C.demand, demandSlope >= 2 ? "inelastic" : demandSlope <= 0.5 ? "elastic" : "moderate")}
       {sliderRow("Supply slope", supplySlope, setSupplySlope, 0.2, 3.0, 0.1, C.supply, supplySlope >= 2 ? "inelastic" : supplySlope <= 0.5 ? "elastic" : "moderate")}
-      <div style={{ display: "flex", gap: 16, marginBottom: 8, fontSize: 13, color: C.textMuted, flexWrap: "wrap" }}>
+      <div style={{ display: "flex", gap: 16, marginBottom: 8, fontSize: 18, color: C.textMuted, flexWrap: "wrap" }}>
         <span><span style={{ display: "inline-block", width: 16, height: 3, background: C.demand, marginRight: 6, verticalAlign: "middle" }} />Demand</span>
         <span><span style={{ display: "inline-block", width: 16, height: 3, background: C.supply, marginRight: 6, verticalAlign: "middle" }} />Supply</span>
         {taxRate > 0 && <span><span style={{ display: "inline-block", width: 12, height: 12, background: `${C.yellow}22`, border: `1px dashed ${C.yellow}`, marginRight: 6, verticalAlign: "middle" }} />Tax Revenue</span>}
@@ -437,23 +440,23 @@ function TaxWedgeGraph() {
         {taxRate > 0 && tri && (
           <svg style={{ position: "absolute", top: 0, left: 0, width: "100%", height: 320, pointerEvents: "none", zIndex: 5 }}>
             <rect x={tri.x0} y={tri.y1} width={tri.x1 - tri.x0} height={tri.y3 - tri.y1} fill={`${C.yellow}18`} stroke={C.yellow} strokeWidth={1} strokeDasharray="4 2" />
-            <text x={tri.x0 + (tri.x1 - tri.x0) / 2} y={tri.y1 + (tri.y3 - tri.y1) / 2 + 4} fill={C.yellow} fontSize={10} fontWeight={700} textAnchor="middle">Revenue</text>
+            <text x={tri.x0 + (tri.x1 - tri.x0) / 2} y={tri.y1 + (tri.y3 - tri.y1) / 2 + 4} fill={C.yellow} fontSize={18} fontWeight={700} textAnchor="middle">Revenue</text>
             <polygon points={`${tri.x1},${tri.y1} ${tri.x2},${tri.y2} ${tri.x3},${tri.y3}`} fill={C.dwl} stroke={C.red} strokeWidth={1.5} strokeDasharray="4 2" />
-            <text x={(tri.x1 + tri.x2 + tri.x3) / 3 - 8} y={(tri.y1 + tri.y2 + tri.y3) / 3 + 4} fill={C.red} fontSize={10} fontWeight={700}>DWL</text>
+            <text x={(tri.x1 + tri.x2 + tri.x3) / 3 - 8} y={(tri.y1 + tri.y2 + tri.y3) / 3 + 4} fill={C.red} fontSize={18} fontWeight={700}>DWL</text>
           </svg>
         )}
         <ResponsiveContainer width="100%" height={320}>
           <ComposedChart data={data} margin={{ top: 10, right: 20, bottom: 20, left: 20 }}>
             <CartesianGrid strokeDasharray="3 3" stroke={C.gridLine} fill="transparent" />
-            <XAxis dataKey="q" label={{ value: "Quantity", position: "bottom", fill: C.textMuted, fontSize: 12 }} tick={{ fill: C.textMuted, fontSize: 11 }} stroke={C.gridLine} />
-            <YAxis domain={[0, 110]} label={{ value: "Price ($)", angle: -90, position: "insideLeft", fill: C.textMuted, fontSize: 12 }} tick={{ fill: C.textMuted, fontSize: 11 }} stroke={C.gridLine} />
+            <XAxis dataKey="q" label={{ value: "Quantity", position: "bottom", fill: C.textMuted, fontSize: 18 }} tick={{ fill: C.textMuted, fontSize: 18 }} stroke={C.gridLine} />
+            <YAxis domain={[0, 110]} label={{ value: "Price ($)", angle: -90, position: "insideLeft", fill: C.textMuted, fontSize: 18 }} tick={{ fill: C.textMuted, fontSize: 18 }} stroke={C.gridLine} />
             <Line type="linear" dataKey="demand" stroke={C.demand} strokeWidth={2.5} dot={false} connectNulls={false} />
             <Line type="linear" dataKey="supply" stroke={C.supply} strokeWidth={2.5} dot={false} connectNulls={false} />
             {taxRate > 0 && (
               <>
-                <ReferenceLine y={pBuyers} stroke={C.demand} strokeDasharray="6 3" strokeWidth={1.5}><Label value={`Buyers: $${Math.round(pBuyers)}`} fill={C.demand} fontSize={11} position="right" /></ReferenceLine>
-                <ReferenceLine y={pSellers} stroke={C.supply} strokeDasharray="6 3" strokeWidth={1.5}><Label value={`Sellers: $${Math.round(pSellers)}`} fill={C.supply} fontSize={11} position="right" /></ReferenceLine>
-                <ReferenceLine x={newQ} stroke={C.textMuted} strokeDasharray="4 4"><Label value={`Q=${Math.round(newQ)}`} fill={C.textMuted} fontSize={11} position="top" /></ReferenceLine>
+                <ReferenceLine y={pBuyers} stroke={C.demand} strokeDasharray="6 3" strokeWidth={1.5}><Label value={`Buyers: $${Math.round(pBuyers)}`} fill={C.demand} fontSize={18} position="right" /></ReferenceLine>
+                <ReferenceLine y={pSellers} stroke={C.supply} strokeDasharray="6 3" strokeWidth={1.5}><Label value={`Sellers: $${Math.round(pSellers)}`} fill={C.supply} fontSize={18} position="right" /></ReferenceLine>
+                <ReferenceLine x={newQ} stroke={C.textMuted} strokeDasharray="4 4"><Label value={`Q=${Math.round(newQ)}`} fill={C.textMuted} fontSize={18} position="top" /></ReferenceLine>
               </>
             )}
           </ComposedChart>
@@ -469,13 +472,13 @@ function TaxWedgeGraph() {
           { label: "Seller %", value: `${sellerPct}%`, color: C.supply },
         ].map(({ label, value, color }) => (
           <div key={label} style={{ ...glassCard, textAlign: "center", padding: "10px" }}>
-            <div style={{ fontSize: 11, color: C.textMuted }}>{label}</div>
-            <div style={{ fontSize: 18, fontWeight: 700, color, fontFamily: F.mono }}>{value}</div>
+            <div style={{ fontSize: 18, color: C.textMuted }}>{label}</div>
+            <div style={{ fontSize: 24, fontWeight: 600, color, fontFamily: F.mono }}>{value}</div>
           </div>
         ))}
       </div>
       {taxRate > 0 && (
-        <div style={{ ...glassCard, fontSize: 15, lineHeight: 1.8, color: C.text, marginTop: 8 }}>
+        <div style={{ ...glassCard, fontSize: 22, lineHeight: 1.7, color: C.text, marginTop: 10 }}>
           {buyerPct > sellerPct ? <>The <strong style={{ color: C.demand }}>more inelastic</strong> side (demand) bears {buyerPct}% of the tax — buyers can't easily leave the market.</>
             : buyerPct < sellerPct ? <>The <strong style={{ color: C.supply }}>more inelastic</strong> side (supply) bears {sellerPct}% — sellers can't easily exit.</>
             : <>Burden split equally — both curves have the same elasticity at equilibrium.</>}
@@ -498,7 +501,7 @@ function CostCurvesGraph() {
       <div style={{ display: "flex", gap: 8, marginBottom: 12, flexWrap: "wrap" }}>
         {[{ k: "mc", l: "MC", c: C.mc }, { k: "atc", l: "ATC", c: C.atc }, { k: "avc", l: "AVC", c: C.purple }, { k: "afc", l: "AFC", c: C.textMuted }].map(({ k, l, c }) => (
           <button key={k} onClick={() => setShow(p => ({ ...p, [k]: !p[k] }))} style={{
-            padding: "6px 14px", borderRadius: 10, fontFamily: F.mono, fontSize: 13, fontWeight: 700, cursor: "pointer",
+            padding: "10px 16px", borderRadius: 10, fontFamily: F.mono, fontSize: 18, fontWeight: 600, cursor: "pointer", transition: "all 0.2s ease",
             ...glassPanel, background: show[k] ? `${c}18` : C.glass, borderColor: show[k] ? c + "44" : C.glassBorder, color: show[k] ? c : C.textMuted,
           }}>{l}</button>
         ))}
@@ -506,16 +509,16 @@ function CostCurvesGraph() {
       <ResponsiveContainer width="100%" height={320}>
         <LineChart data={data} margin={{ top: 10, right: 20, bottom: 20, left: 20 }}>
           <CartesianGrid strokeDasharray="3 3" stroke={C.gridLine} />
-          <XAxis dataKey="q" label={{ value: "Quantity", position: "bottom", fill: C.textMuted, fontSize: 12 }} tick={{ fill: C.textMuted, fontSize: 11 }} stroke={C.gridLine} />
-          <YAxis domain={[0, 120]} label={{ value: "Cost ($)", angle: -90, position: "insideLeft", fill: C.textMuted, fontSize: 12 }} tick={{ fill: C.textMuted, fontSize: 11 }} stroke={C.gridLine} />
-          <RTooltip contentStyle={{ ...glassPanel, background: "rgba(15,15,30,0.9)", fontSize: 12 }} />
+          <XAxis dataKey="q" label={{ value: "Quantity", position: "bottom", fill: C.textMuted, fontSize: 18 }} tick={{ fill: C.textMuted, fontSize: 18 }} stroke={C.gridLine} />
+          <YAxis domain={[0, 120]} label={{ value: "Cost ($)", angle: -90, position: "insideLeft", fill: C.textMuted, fontSize: 18 }} tick={{ fill: C.textMuted, fontSize: 18 }} stroke={C.gridLine} />
+          <RTooltip contentStyle={{ ...glassPanel, background: "rgba(15,15,30,0.9)", fontSize: 18 }} />
           {show.mc && <Line type="monotone" dataKey="mc" stroke={C.mc} strokeWidth={2.5} dot={false} name="MC" />}
           {show.atc && <Line type="monotone" dataKey="atc" stroke={C.atc} strokeWidth={2.5} dot={false} name="ATC" />}
           {show.avc && <Line type="monotone" dataKey="avc" stroke={C.purple} strokeWidth={2.5} dot={false} name="AVC" />}
           {show.afc && <Line type="monotone" dataKey="afc" stroke={C.textMuted} strokeWidth={2} dot={false} name="AFC" strokeDasharray="6 3" />}
         </LineChart>
       </ResponsiveContainer>
-      <div style={{ ...glassCard, fontSize: 15, lineHeight: 1.8, color: C.text, marginTop: 4 }}>
+      <div style={{ ...glassCard, fontSize: 22, lineHeight: 1.7, color: C.text, marginTop: 10 }}>
         <strong style={{ color: C.mc }}>MC</strong> crosses <strong style={{ color: C.atc }}>ATC</strong> at ATC's minimum (efficient scale). When MC &lt; ATC → ATC falls. When MC &gt; ATC → ATC rises.
       </div>
     </div>
@@ -533,7 +536,7 @@ function MonopolyGraph() {
       <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
         {[{ v: false, l: "Monopoly Only" }, { v: true, l: "Compare to Competition" }].map(({ v, l }) => (
           <button key={l} onClick={() => setShowCompare(v)} style={{
-            padding: "8px 16px", borderRadius: 10, fontSize: 14, fontFamily: F.body, cursor: "pointer",
+            padding: "10px 18px", borderRadius: 10, fontSize: 20, fontFamily: F.body, cursor: "pointer", transition: "all 0.2s ease",
             ...glassPanel, background: showCompare === v ? C.accentDim : C.glass,
             borderColor: showCompare === v ? C.accent + "44" : C.glassBorder,
             color: showCompare === v ? C.accent : C.textMuted, fontWeight: showCompare === v ? 700 : 400,
@@ -543,23 +546,23 @@ function MonopolyGraph() {
       <ResponsiveContainer width="100%" height={340}>
         <ComposedChart data={data} margin={{ top: 10, right: 20, bottom: 20, left: 20 }}>
           <CartesianGrid strokeDasharray="3 3" stroke={C.gridLine} />
-          <XAxis dataKey="q" label={{ value: "Quantity", position: "bottom", fill: C.textMuted, fontSize: 12 }} tick={{ fill: C.textMuted, fontSize: 11 }} stroke={C.gridLine} />
-          <YAxis domain={[0, 130]} label={{ value: "$ per unit", angle: -90, position: "insideLeft", fill: C.textMuted, fontSize: 12 }} tick={{ fill: C.textMuted, fontSize: 11 }} stroke={C.gridLine} />
-          <RTooltip contentStyle={{ ...glassPanel, background: "rgba(15,15,30,0.9)", fontSize: 12 }} />
+          <XAxis dataKey="q" label={{ value: "Quantity", position: "bottom", fill: C.textMuted, fontSize: 18 }} tick={{ fill: C.textMuted, fontSize: 18 }} stroke={C.gridLine} />
+          <YAxis domain={[0, 130]} label={{ value: "$ per unit", angle: -90, position: "insideLeft", fill: C.textMuted, fontSize: 18 }} tick={{ fill: C.textMuted, fontSize: 18 }} stroke={C.gridLine} />
+          <RTooltip contentStyle={{ ...glassPanel, background: "rgba(15,15,30,0.9)", fontSize: 18 }} />
           <Line type="linear" dataKey="price" stroke={C.demand} strokeWidth={2.5} dot={false} name="Demand" />
           <Line type="linear" dataKey="mr" stroke={C.mr} strokeWidth={2} dot={false} name="MR" strokeDasharray="6 3" />
           <Line type="linear" dataKey="mc" stroke={C.mc} strokeWidth={2.5} dot={false} name="MC" />
-          <ReferenceLine x={monoQ} stroke={C.purple} strokeDasharray="4 4"><Label value={`Qm=${monoQ}`} fill={C.purple} fontSize={11} position="top" /></ReferenceLine>
-          <ReferenceLine y={monoP} stroke={C.purple} strokeDasharray="4 4"><Label value={`Pm=$${monoP}`} fill={C.purple} fontSize={11} position="right" /></ReferenceLine>
+          <ReferenceLine x={monoQ} stroke={C.purple} strokeDasharray="4 4"><Label value={`Qm=${monoQ}`} fill={C.purple} fontSize={18} position="top" /></ReferenceLine>
+          <ReferenceLine y={monoP} stroke={C.purple} strokeDasharray="4 4"><Label value={`Pm=$${monoP}`} fill={C.purple} fontSize={18} position="right" /></ReferenceLine>
           {showCompare && (
             <>
-              <ReferenceLine x={compQ} stroke={C.green} strokeDasharray="4 4"><Label value={`Qc≈${compQ}`} fill={C.green} fontSize={11} position="top" /></ReferenceLine>
-              <ReferenceLine y={compP} stroke={C.green} strokeDasharray="4 4"><Label value={`Pc≈$${compP}`} fill={C.green} fontSize={11} position="right" /></ReferenceLine>
+              <ReferenceLine x={compQ} stroke={C.green} strokeDasharray="4 4"><Label value={`Qc≈${compQ}`} fill={C.green} fontSize={18} position="top" /></ReferenceLine>
+              <ReferenceLine y={compP} stroke={C.green} strokeDasharray="4 4"><Label value={`Pc≈$${compP}`} fill={C.green} fontSize={18} position="right" /></ReferenceLine>
             </>
           )}
         </ComposedChart>
       </ResponsiveContainer>
-      <div style={{ ...glassCard, fontSize: 15, lineHeight: 1.8, color: C.text, marginTop: 4 }}>
+      <div style={{ ...glassCard, fontSize: 22, lineHeight: 1.7, color: C.text, marginTop: 10 }}>
         <strong style={{ color: C.purple }}>Monopoly:</strong> MR = MC at Q={monoQ}, price read off demand → P=${monoP}. P &gt; MC.
         {showCompare && <> <strong style={{ color: C.green }}>Competition:</strong> P = MC at Q≈{compQ}, P≈${compP}. The gap is <strong style={{ color: C.red }}>deadweight loss</strong>.</>}
       </div>
@@ -577,7 +580,7 @@ function EfficiencyGraph() {
       <div style={{ display: "flex", gap: 8, marginBottom: 12, flexWrap: "wrap" }}>
         {[{ key: "cs", label: "Consumer Surplus", color: C.demand }, { key: "ps", label: "Producer Surplus", color: C.supply }, { key: "both", label: "Total Surplus", color: C.green }].map(({ key, label, color }) => (
           <button key={key} onClick={() => setHighlight(key)} style={{
-            padding: "8px 16px", borderRadius: 10, fontSize: 14, fontFamily: F.body, cursor: "pointer",
+            padding: "10px 18px", borderRadius: 10, fontSize: 20, fontFamily: F.body, cursor: "pointer", transition: "all 0.2s ease",
             ...glassPanel, background: highlight === key ? `${color}18` : C.glass,
             borderColor: highlight === key ? color + "44" : C.glassBorder, color: highlight === key ? color : C.textMuted,
           }}>{label}</button>
@@ -586,14 +589,14 @@ function EfficiencyGraph() {
       <ResponsiveContainer width="100%" height={320}>
         <ComposedChart data={data} margin={{ top: 10, right: 20, bottom: 20, left: 20 }}>
           <CartesianGrid strokeDasharray="3 3" stroke={C.gridLine} />
-          <XAxis dataKey="q" label={{ value: "Quantity", position: "bottom", fill: C.textMuted, fontSize: 12 }} tick={{ fill: C.textMuted, fontSize: 11 }} stroke={C.gridLine} />
-          <YAxis domain={[0, 110]} label={{ value: "Price ($)", angle: -90, position: "insideLeft", fill: C.textMuted, fontSize: 12 }} tick={{ fill: C.textMuted, fontSize: 11 }} stroke={C.gridLine} />
+          <XAxis dataKey="q" label={{ value: "Quantity", position: "bottom", fill: C.textMuted, fontSize: 18 }} tick={{ fill: C.textMuted, fontSize: 18 }} stroke={C.gridLine} />
+          <YAxis domain={[0, 110]} label={{ value: "Price ($)", angle: -90, position: "insideLeft", fill: C.textMuted, fontSize: 18 }} tick={{ fill: C.textMuted, fontSize: 18 }} stroke={C.gridLine} />
           <Line type="linear" dataKey="demand" stroke={C.demand} strokeWidth={2.5} dot={false} />
           <Line type="linear" dataKey="supply" stroke={C.supply} strokeWidth={2.5} dot={false} />
           <ReferenceDot x={eqQ} y={eqP} r={6} fill={C.green} stroke={C.green} />
         </ComposedChart>
       </ResponsiveContainer>
-      <div style={{ ...glassCard, fontSize: 15, lineHeight: 1.8, color: C.text, marginTop: 4 }}>
+      <div style={{ ...glassCard, fontSize: 22, lineHeight: 1.7, color: C.text, marginTop: 10 }}>
         {highlight === "cs" && <><strong style={{ color: C.demand }}>Consumer Surplus</strong> = area below demand, above price. CS = ½(50)(50) = $1,250.</>}
         {highlight === "ps" && <><strong style={{ color: C.supply }}>Producer Surplus</strong> = area above supply, below price. PS = ½(50)(40) = $1,000.</>}
         {highlight === "both" && <><strong style={{ color: C.green }}>Total Surplus</strong> = CS + PS = $2,250. At equilibrium, total surplus is maximized — allocative efficiency.</>}
@@ -621,7 +624,7 @@ function MarketShocksGraph() {
   const pChg = Math.round(newEqP - baseEqP), qChg = Math.round(newEqQ - baseEqQ);
   const sldr = (label, value, setValue, color, descFn) => (
     <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 8, flexWrap: "wrap" }}>
-      <label style={{ fontSize: 14, color: C.textMuted, minWidth: 180 }}>{label}: <strong style={{ color }}>{value > 0 ? "+" : ""}{value}</strong> <span style={{ fontSize: 12, opacity: 0.7 }}>({descFn(value)})</span></label>
+      <label style={{ fontSize: 20, color: C.textMuted, minWidth: 220 }}>{label}: <span style={{ color, fontWeight: 600 }}>{value > 0 ? "+" : ""}{value}</span> <span style={{ fontSize: 18, opacity: 0.7 }}>({descFn(value)})</span></label>
       <input type="range" min={-40} max={40} step={5} value={value} onChange={e => setValue(Number(e.target.value))} style={{ flex: 1, minWidth: 100, accentColor: color }} />
     </div>
   );
@@ -632,8 +635,8 @@ function MarketShocksGraph() {
       <ResponsiveContainer width="100%" height={340}>
         <ComposedChart data={data} margin={{ top: 10, right: 20, bottom: 20, left: 20 }}>
           <CartesianGrid strokeDasharray="3 3" stroke={C.gridLine} />
-          <XAxis dataKey="q" label={{ value: "Quantity", position: "bottom", fill: C.textMuted, fontSize: 12 }} tick={{ fill: C.textMuted, fontSize: 11 }} stroke={C.gridLine} />
-          <YAxis domain={[0, 130]} label={{ value: "Price ($)", angle: -90, position: "insideLeft", fill: C.textMuted, fontSize: 12 }} tick={{ fill: C.textMuted, fontSize: 11 }} stroke={C.gridLine} />
+          <XAxis dataKey="q" label={{ value: "Quantity", position: "bottom", fill: C.textMuted, fontSize: 18 }} tick={{ fill: C.textMuted, fontSize: 18 }} stroke={C.gridLine} />
+          <YAxis domain={[0, 130]} label={{ value: "Price ($)", angle: -90, position: "insideLeft", fill: C.textMuted, fontSize: 18 }} tick={{ fill: C.textMuted, fontSize: 18 }} stroke={C.gridLine} />
           <Line type="linear" dataKey="baseDemand" stroke={C.demand} strokeWidth={1.5} dot={false} strokeOpacity={0.25} connectNulls={false} />
           <Line type="linear" dataKey="baseSupply" stroke={C.supply} strokeWidth={1.5} dot={false} strokeOpacity={0.25} connectNulls={false} />
           <Line type="linear" dataKey="demand" stroke={C.demand} strokeWidth={2.5} dot={false} connectNulls={false} />
@@ -647,12 +650,12 @@ function MarketShocksGraph() {
           { label: "Eq. Quantity", value: Math.round(newEqQ), sub: qChg !== 0 ? `(${qChg > 0 ? "+" : ""}${qChg})` : "", color: qChg > 0 ? C.green : qChg < 0 ? C.red : C.text }
         ].map(({ label, value, sub, color }) => (
           <div key={label} style={{ ...glassCard, textAlign: "center" }}>
-            <div style={{ fontSize: 11, color: C.textMuted }}>{label}</div>
-            <div style={{ fontSize: 18, fontWeight: 700, color, fontFamily: F.mono }}>{value} <span style={{ fontSize: 12 }}>{sub}</span></div>
+            <div style={{ fontSize: 18, color: C.textMuted }}>{label}</div>
+            <div style={{ fontSize: 24, fontWeight: 600, color, fontFamily: F.mono }}>{value} <span style={{ fontSize: 18 }}>{sub}</span></div>
           </div>
         ))}
       </div>
-      <div style={{ ...glassCard, fontSize: 15, lineHeight: 1.8, color: C.text, marginTop: 8 }}>
+      <div style={{ ...glassCard, fontSize: 22, lineHeight: 1.7, color: C.text, marginTop: 10 }}>
         {dShift === 0 && sShift === 0 && <>Use the sliders to shift demand or supply and watch the equilibrium respond.</>}
         {dShift > 0 && sShift === 0 && <>Demand ↑ → <strong>Price ↑, Quantity ↑.</strong></>}
         {dShift < 0 && sShift === 0 && <>Demand ↓ → <strong>Price ↓, Quantity ↓.</strong></>}
@@ -685,7 +688,7 @@ function ElasticityGraph() {
       <div style={{ display: "flex", gap: 8, marginBottom: 12, flexWrap: "wrap" }}>
         {Object.entries(cfgs).map(([k, v]) => (
           <button key={k} onClick={() => setT(k)} style={{
-            padding: "6px 14px", borderRadius: 10, fontSize: 13, fontFamily: F.body, cursor: "pointer",
+            padding: "10px 16px", borderRadius: 10, fontSize: 18, fontFamily: F.body, cursor: "pointer", transition: "all 0.2s ease",
             ...glassPanel, background: t === k ? C.accentDim : C.glass, borderColor: t === k ? C.accent + "44" : C.glassBorder,
             color: t === k ? C.accent : C.textMuted, fontWeight: t === k ? 600 : 400,
           }}>{v.l}</button>
@@ -694,14 +697,14 @@ function ElasticityGraph() {
       <ResponsiveContainer width="100%" height={320}>
         <ComposedChart data={data} margin={{ top: 10, right: 20, bottom: 20, left: 20 }}>
           <CartesianGrid strokeDasharray="3 3" stroke={C.gridLine} />
-          <XAxis dataKey="q" label={{ value: "Quantity", position: "bottom", fill: C.textMuted, fontSize: 12 }} tick={{ fill: C.textMuted, fontSize: 11 }} stroke={C.gridLine} />
-          <YAxis domain={[0, 120]} label={{ value: "Price ($)", angle: -90, position: "insideLeft", fill: C.textMuted, fontSize: 12 }} tick={{ fill: C.textMuted, fontSize: 11 }} stroke={C.gridLine} />
+          <XAxis dataKey="q" label={{ value: "Quantity", position: "bottom", fill: C.textMuted, fontSize: 18 }} tick={{ fill: C.textMuted, fontSize: 18 }} stroke={C.gridLine} />
+          <YAxis domain={[0, 120]} label={{ value: "Price ($)", angle: -90, position: "insideLeft", fill: C.textMuted, fontSize: 18 }} tick={{ fill: C.textMuted, fontSize: 18 }} stroke={C.gridLine} />
           <Line type="linear" dataKey="demand" stroke={C.demand} strokeWidth={2.5} dot={false} connectNulls={false} />
           <Line type="linear" dataKey="supply" stroke={C.supply} strokeWidth={2.5} dot={false} connectNulls={false} />
           <ReferenceDot x={50} y={50} r={6} fill={C.green} stroke={C.green} />
         </ComposedChart>
       </ResponsiveContainer>
-      <div style={{ ...glassCard, fontSize: 15, lineHeight: 1.8, color: C.text, marginTop: 4 }}>
+      <div style={{ ...glassCard, fontSize: 22, lineHeight: 1.7, color: C.text, marginTop: 10 }}>
         {t === "normal" && <>Moderate slopes on both curves.</>}
         {t === "inelasticD" && <>Steep demand = inelastic. Buyers barely respond to price changes. From Ch. 6/8: <strong>buyers bear most of any tax.</strong></>}
         {t === "elasticD" && <>Flat demand = elastic. Small price increase → buyers flee. Taxes on elastic goods create <strong>large DWL.</strong></>}
@@ -760,7 +763,7 @@ function ChapterShocks() {
     <p>When <strong>both shift simultaneously</strong>: one variable is predictable, the other is ambiguous (depends on which shift is larger).</p>
     <Intuition>Single shift = both P and Q predictable. Double shift = one predictable, one ambiguous. Extremely common exam question.</Intuition>
 
-    <p style={{ fontWeight: 700, color: C.heading, marginTop: 24 }}>Interactive: Market Shocks Simulator</p>
+    <p style={{ fontWeight: 600, color: C.heading, marginTop: 28 }}>Interactive: Market Shocks Simulator</p>
     <MarketShocksGraph />
   </div>);
 }
@@ -787,7 +790,7 @@ function Chapter5() {
     <p><T t="income elasticity of demand" />: positive = normal good (Ei &gt; 1 = luxury), negative = inferior good.</p>
     <p><T t="cross-price elasticity" />: positive = substitutes, negative = complements.</p>
 
-    <p style={{ fontWeight: 700, color: C.heading, marginTop: 24 }}>Interactive: Visualizing Elasticity</p>
+    <p style={{ fontWeight: 600, color: C.heading, marginTop: 28 }}>Interactive: Visualizing Elasticity</p>
     <ElasticityGraph />
   </div>);
 }
@@ -797,7 +800,7 @@ function Chapter6_8() {
     <SectionTitle>Price Controls</SectionTitle>
     <p>A <T t="price ceiling" /> is a legal max price. Binding when set below <T t="equilibrium" /> → <T t="shortage" /> → black markets, queues, quality degradation.</p>
     <p>A <T t="price floor" /> is a legal min price. Binding when set above equilibrium → <T t="surplus" /> → wasted output. Minimum wage is a price floor in the labor market.</p>
-    <p style={{ fontWeight: 700, color: C.heading, marginTop: 24 }}>Interactive: Price Controls</p>
+    <p style={{ fontWeight: 600, color: C.heading, marginTop: 28 }}>Interactive: Price Controls</p>
     <SupplyDemandGraph />
 
     <SectionTitle>Taxation</SectionTitle>
@@ -809,7 +812,7 @@ function Chapter6_8() {
       <p>The <T t="laffer curve" />: at tax rate 0 → revenue = 0. At 100% → nobody trades → revenue = 0. Revenue is maximized somewhere in between. DWL grows with the square of the tax rate — doubling the tax quadruples DWL. This connects to Ch. 12's tax design principles.</p>
     </DeepDive>
 
-    <p style={{ fontWeight: 700, color: C.heading, marginTop: 24 }}>Interactive: Tax Wedge Simulator</p>
+    <p style={{ fontWeight: 600, color: C.heading, marginTop: 28 }}>Interactive: Tax Wedge Simulator</p>
     <TaxWedgeGraph />
   </div>);
 }
@@ -825,7 +828,7 @@ function Chapter7() {
       <p>Any intervention that moves quantity away from equilibrium creates <T t="deadweight loss" /> — trades that would benefit both buyer and seller but don't happen. This is true for taxes (Ch. 6/8), price controls (Ch. 6), monopoly restriction (Ch. 15), and tariffs (Ch. 9). The surplus framework is the universal tool for evaluating all of these.</p>
     </DeepDive>
 
-    <p style={{ fontWeight: 700, color: C.heading, marginTop: 24 }}>Interactive: Consumer & Producer Surplus</p>
+    <p style={{ fontWeight: 600, color: C.heading, marginTop: 28 }}>Interactive: Consumer & Producer Surplus</p>
     <EfficiencyGraph />
   </div>);
 }
@@ -912,7 +915,7 @@ function Chapter13() {
     <p><strong>MC-ATC relationship:</strong> MC &lt; ATC → ATC falls. MC &gt; ATC → ATC rises. MC crosses ATC at the minimum.</p>
     <Intuition>GPA analogy: if your next semester's grades (MC) are above your cumulative GPA (ATC), your GPA rises. Below → it falls. Equal → the turning point.</Intuition>
 
-    <p style={{ fontWeight: 700, color: C.heading, marginTop: 24 }}>Interactive: Cost Curves</p>
+    <p style={{ fontWeight: 600, color: C.heading, marginTop: 28 }}>Interactive: Cost Curves</p>
     <CostCurvesGraph />
 
     <SectionTitle>Short Run vs. Long Run</SectionTitle>
@@ -949,7 +952,7 @@ function Chapter15() {
     <Formula>1. Find Q where MR = MC → 2. Price = Demand(Q) → 3. Profit = (P − ATC) × Q</Formula>
     <Intuition>Selling 10 widgets at $10 = $100. To sell 11, cut price to $9.50 for ALL. Revenue = $104.50. MR of 11th = $4.50, not $9.50.</Intuition>
 
-    <p style={{ fontWeight: 700, color: C.heading, marginTop: 24 }}>Interactive: Monopoly vs. Competition</p>
+    <p style={{ fontWeight: 600, color: C.heading, marginTop: 28 }}>Interactive: Monopoly vs. Competition</p>
     <MonopolyGraph />
 
     <SectionTitle>Costs & Remedies</SectionTitle>
@@ -1103,57 +1106,67 @@ function App() {
   const idx = CHAPTERS.findIndex(c => c.id === activeChapter);
 
   return (
-    <div style={{ minHeight: "100vh", color: C.text, fontFamily: F.body, fontSize: 16, lineHeight: 1.85 }}>
-      {/* Mobile menu */}
-      <button className="mobile-menu" onClick={() => setSidebarOpen(!sidebarOpen)} style={{
-        position: "fixed", top: 12, left: 12, zIndex: 1300,
-        ...glassPanel, background: "rgba(15,15,30,0.8)", padding: "8px 14px", cursor: "pointer",
-        color: C.heading, fontSize: 18, display: "none",
-      }}>☰</button>
+    <div style={{ minHeight: "100vh", color: C.text, fontFamily: F.body, fontSize: 24, lineHeight: 1.7 }}>
+      {/* Mobile overlay */}
+      {sidebarOpen && <div onClick={() => setSidebarOpen(false)} style={{
+        position: "fixed", inset: 0, background: "rgba(0,0,0,0.4)", zIndex: 1100,
+        animation: "fadeIn 0.2s ease",
+      }} />}
+      {/* Hamburger toggle - works on all sizes */}
+      <button onClick={() => setSidebarOpen(!sidebarOpen)} style={{
+        position: "fixed", top: 16, left: sidebarOpen ? 312 : 16, zIndex: 1300,
+        ...glassPanel, background: "rgba(15,15,30,0.85)", backdropFilter: "blur(16px)",
+        padding: "10px 14px", cursor: "pointer", color: C.heading, fontSize: 22,
+        display: "flex", alignItems: "center", justifyContent: "center",
+        width: 44, height: 44, transition: "left 0.3s cubic-bezier(0.4,0,0.2,1)",
+      }}>{sidebarOpen ? "✕" : "☰"}</button>
 
       <div style={{ display: "flex", minHeight: "100vh" }}>
         {/* Sidebar */}
         <nav className={`sidebar${sidebarOpen ? " open" : ""}`} style={{
-          width: 280, minWidth: 280, background: "rgba(10,10,18,0.7)", backdropFilter: "blur(24px)",
-          WebkitBackdropFilter: "blur(24px)", borderRight: `1px solid ${C.glassBorder}`,
-          padding: "28px 0", position: "sticky", top: 0, height: "100vh", overflowY: "auto", flexShrink: 0,
+          width: 300, minWidth: 300, background: "rgba(10,10,18,0.85)", backdropFilter: "blur(28px)",
+          WebkitBackdropFilter: "blur(28px)", borderRight: `1px solid ${C.glassBorder}`,
+          padding: "28px 0", position: "fixed", top: 0, left: 0, height: "100vh", overflowY: "auto",
+          zIndex: 1200, transform: sidebarOpen ? "translateX(0)" : "translateX(-100%)",
+          transition: "transform 0.3s cubic-bezier(0.4,0,0.2,1)",
+          boxShadow: sidebarOpen ? "20px 0 60px rgba(0,0,0,0.4)" : "none",
         }}>
-          <div style={{ padding: "0 20px", marginBottom: 28 }}>
-            <h1 style={{ fontFamily: F.display, fontSize: 22, fontWeight: 400, color: C.heading, margin: 0, lineHeight: 1.3 }}>
+          <div style={{ padding: "0 20px", marginBottom: 24 }}>
+            <h1 style={{ fontFamily: F.display, fontSize: 22, fontWeight: 700, color: C.heading, margin: 0, lineHeight: 1.3 }}>
               Mankiw Review
             </h1>
-            <p style={{ fontSize: 12, color: C.textMuted, margin: "6px 0 0", letterSpacing: 1.5, textTransform: "uppercase" }}>Principles of Economics</p>
+            <p style={{ fontSize: 18, color: C.textMuted, margin: "6px 0 0", letterSpacing: 1.5, textTransform: "uppercase" }}>Principles of Economics</p>
           </div>
 
           <div style={{ padding: "0 12px" }}>
             {CHAPTERS.map(ch => (
               <button key={ch.id} onClick={() => { setActiveChapter(ch.id); setSidebarOpen(false); }} style={{
-                display: "block", width: "100%", textAlign: "left", padding: "8px 12px", marginBottom: 2,
+                display: "block", width: "100%", textAlign: "left", padding: "10px 16px", marginBottom: 2,
                 background: activeChapter === ch.id ? C.accentDim : "transparent",
                 border: "none", borderRadius: 10, cursor: "pointer", fontFamily: F.body,
                 transition: "all 0.2s ease",
               }}>
-                <span style={{ fontSize: 10, fontWeight: 700, color: activeChapter === ch.id ? C.accent : C.textMuted, textTransform: "uppercase", letterSpacing: 1 }}>{ch.label}</span>
+                <span style={{ fontSize: 18, fontWeight: 600, color: activeChapter === ch.id ? C.accent : C.textMuted, textTransform: "uppercase", letterSpacing: 0.5 }}>{ch.label}</span>
                 <br />
-                <span style={{ fontSize: 14, color: activeChapter === ch.id ? C.heading : "rgba(255,255,255,0.55)", fontWeight: activeChapter === ch.id ? 600 : 400 }}>{ch.title}</span>
+                <span style={{ fontSize: 18, color: activeChapter === ch.id ? C.heading : "rgba(255,255,255,0.55)", fontWeight: activeChapter === ch.id ? 500 : 400 }}>{ch.title}</span>
               </button>
             ))}
           </div>
 
-          <div style={{ margin: "24px 16px 0", ...glassCard, fontSize: 13, color: C.textMuted, lineHeight: 1.6 }}>
-            💡 Hover <span style={{ color: C.accent, borderBottom: `1px dashed ${C.accent}66` }}>underlined terms</span> for definitions. Expand <span style={{ color: C.accent, background: C.accentDim, padding: "1px 6px", borderRadius: 4, fontSize: 11 }}>DEEP DIVE</span> panels for details.
+          <div style={{ margin: "24px 16px 0", ...glassCard, fontSize: 18, color: C.textMuted, lineHeight: 1.6 }}>
+            💡 Hover <span style={{ color: C.accent, borderBottom: `1px dashed ${C.accent}66` }}>underlined terms</span> for definitions. Expand <span style={{ color: C.accent, background: C.accentDim, padding: "2px 8px", borderRadius: 6, fontSize: 18 }}>DEEP DIVE</span> panels for details.
           </div>
         </nav>
 
         {/* Main */}
-        <main style={{ flex: 1, maxWidth: 800, margin: "0 auto", padding: "44px 36px 80px" }}>
-          <div style={{ marginBottom: 36, animation: "fadeIn 0.4s ease" }}>
-            <span style={{ fontSize: 11, fontWeight: 700, color: C.accent, textTransform: "uppercase", letterSpacing: 2 }}>{chapter.label}</span>
-            <h2 style={{ fontFamily: F.display, fontSize: 38, fontWeight: 400, fontStyle: "italic", color: C.heading, margin: "8px 0 0", lineHeight: 1.2 }}>{chapter.title}</h2>
+        <main style={{ flex: 1, maxWidth: 820, margin: "0 auto", padding: "44px 36px 80px" }}>
+          <div key={activeChapter + "-hdr"} style={{ marginBottom: 36, animation: "fadeIn 0.3s ease both" }}>
+            <span style={{ fontSize: 18, fontWeight: 600, color: C.accent, textTransform: "uppercase", letterSpacing: 2 }}>{chapter.label}</span>
+            <h2 style={{ fontFamily: F.display, fontSize: 36, fontWeight: 700, color: C.heading, margin: "8px 0 0", lineHeight: 1.2 }}>{chapter.title}</h2>
             <div style={{ width: 60, height: 2, background: `linear-gradient(90deg, ${C.accent}, transparent)`, marginTop: 16, borderRadius: 1 }} />
           </div>
 
-          <div style={{ animation: "fadeIn 0.5s ease 0.1s both" }}>
+          <div key={activeChapter} style={{ animation: "fadeIn 0.4s ease both" }}>
             <Comp />
           </div>
 
@@ -1161,12 +1174,12 @@ function App() {
           <div style={{ display: "flex", justifyContent: "space-between", marginTop: 52, paddingTop: 24, borderTop: `1px solid ${C.glassBorder}` }}>
             {idx > 0 ? (
               <button onClick={() => { setActiveChapter(CHAPTERS[idx - 1].id); window.scrollTo(0, 0); }} style={{
-                ...glassPanel, padding: "10px 20px", cursor: "pointer", color: C.text, fontFamily: F.body, fontSize: 14, background: C.glass,
+                ...glassPanel, padding: "14px 24px", cursor: "pointer", color: C.text, fontFamily: F.body, fontSize: 20, background: C.glass, transition: "all 0.2s ease",
               }}>← {CHAPTERS[idx - 1].title}</button>
             ) : <div />}
             {idx < CHAPTERS.length - 1 ? (
               <button onClick={() => { setActiveChapter(CHAPTERS[idx + 1].id); window.scrollTo(0, 0); }} style={{
-                ...glassPanel, padding: "10px 20px", cursor: "pointer", color: C.accent, fontFamily: F.body, fontSize: 14, fontWeight: 600, background: C.accentDim, borderColor: C.accent + "33",
+                ...glassPanel, padding: "14px 24px", cursor: "pointer", color: C.accent, fontFamily: F.body, fontSize: 20, fontWeight: 600, background: C.accentDim, borderColor: C.accent + "33", transition: "all 0.2s ease",
               }}>{CHAPTERS[idx + 1].title} →</button>
             ) : <div />}
           </div>
