@@ -1,9 +1,43 @@
-import { useState, useRef, useEffect } from "react";
-import {
-  LineChart, Line, XAxis, YAxis, CartesianGrid,
-  ReferenceLine, ResponsiveContainer, Tooltip as RTooltip, ComposedChart,
-  ReferenceDot, Label
-} from "recharts";
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Mankiw Review — Principles of Economics</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700;900&family=Source+Sans+3:wght@300;400;600;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prop-types/15.8.1/prop-types.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.9/babel.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/recharts@2.12.7/umd/Recharts.js"></script>
+  <script>
+    if (typeof Recharts === 'undefined') {
+      document.getElementById('root').innerHTML = '<div style="color:#c9d1d9;padding:40px;font-family:sans-serif"><h2>Loading Error</h2><p>Could not load the Recharts library. Check your internet connection and try refreshing.</p></div>';
+    }
+  </script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { background: #0d1117; }
+    #root { min-height: 100vh; }
+    @media (max-width: 768px) {
+      .mobile-menu { display: block !important; }
+      nav { display: none !important; }
+      main { padding: 24px 16px 60px !important; }
+    }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+  <script type="text/babel">
+    const { useState, useRef, useEffect } = React;
+    const {
+      LineChart, Line, XAxis, YAxis, CartesianGrid,
+      ReferenceLine, ResponsiveContainer, Tooltip: RTooltip, ComposedChart,
+      ReferenceDot, Label
+    } = Recharts;
+
+
+
 
 // ─── CONSTANTS & THEME ───────────────────────────────────────────────
 const COLORS = {
@@ -1017,7 +1051,7 @@ const CHAPTERS = [
   { id: "ch15", label: "Ch. 15", title: "Monopoly Power", component: Chapter15 },
 ];
 
-export default function App() {
+function App() {
   const [activeChapter, setActiveChapter] = useState("ch6-8");
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const chapter = CHAPTERS.find(c => c.id === activeChapter);
@@ -1025,7 +1059,6 @@ export default function App() {
 
   return (
     <>
-      <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700;900&family=Source+Sans+3:wght@300;400;600;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet" />
       <div style={{
         minHeight: "100vh",
         background: COLORS.bg,
@@ -1191,3 +1224,10 @@ export default function App() {
     </>
   );
 }
+
+
+    const root = ReactDOM.createRoot(document.getElementById("root"));
+    root.render(React.createElement(App));
+  </script>
+</body>
+</html>
